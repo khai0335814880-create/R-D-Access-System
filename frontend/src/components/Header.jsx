@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../store/authStore';
 import { authService } from '../services/authService';
 import { FiLogOut, FiUser } from 'react-icons/fi';
+import LanguageSwitcher from './LanguageSwitcher';
 
 export const Header = () => {
+  const { t } = useTranslation();
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const [showBadge, setShowBadge] = useState(false);
@@ -33,16 +36,16 @@ export const Header = () => {
     switch (user.role) {
       case 'engineer':
         return [
-          { label: 'Devices', path: '/devices' },
-          { label: 'Check-in', path: '/check-in' },
+          { label: t('devices.my_devices'), path: '/devices' },
+          { label: t('kiosk.checkIn'), path: '/check-in' },
         ];
       case 'manager':
         return [
-          { label: 'Approvals', path: '/approvals' },
+          { label: t('approvals.approval_requests'), path: '/approvals' },
         ];
       case 'security':
         return [
-          { label: 'Dashboard', path: '/dashboard' },
+          { label: t('common.dashboard'), path: '/dashboard' },
         ];
       default:
         return [];
@@ -54,11 +57,11 @@ export const Header = () => {
       <div className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
           <Link to="/" className="text-2xl font-bold">
-            R&D Access Management
+            {t('common.appName')}
           </Link>
           
           {user && (
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-4">
               <nav className="flex gap-4">
                 {getNavLinks().map((link) => (
                   <Link
@@ -71,7 +74,7 @@ export const Header = () => {
                 ))}
               </nav>
               
-              <div className="text-sm border-l pl-6">
+              <div className="text-sm border-l pl-4">
                 <p className="font-semibold">{user.full_name}</p>
                 <p className="text-blue-100 capitalize">{user.role}</p>
               </div>
@@ -79,15 +82,19 @@ export const Header = () => {
               <button
                 onClick={handleShowBadge}
                 className="flex items-center gap-2 px-3 py-2 rounded hover:bg-blue-700 transition"
+                title={t('header.profile')}
               >
-                <FiUser /> My Badge
+                <FiUser /> {t('header.profile')}
               </button>
+              
+              <LanguageSwitcher />
               
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-2 px-3 py-2 rounded hover:bg-blue-700 transition"
+                title={t('common.logout')}
               >
-                <FiLogOut /> Logout
+                <FiLogOut /> {t('common.logout')}
               </button>
             </div>
           )}
@@ -100,19 +107,20 @@ export const Header = () => {
             <button 
               onClick={() => setShowBadge(false)}
               className="absolute top-2 right-4 text-gray-500 hover:text-gray-800 text-2xl font-bold"
+              title={t('common.close')}
             >
               &times;
             </button>
-            <h2 className="text-2xl font-bold mb-2">Employee Badge</h2>
+            <h2 className="text-2xl font-bold mb-2">{t('header.profile')}</h2>
             <p className="text-gray-600 mb-6">{user?.full_name}</p>
             {badgeUrl ? (
               <img src={badgeUrl} alt="Employee QR Code" className="mx-auto w-48 h-48 mb-4 border border-gray-200" />
             ) : (
               <div className="w-48 h-48 mx-auto mb-4 bg-gray-100 flex items-center justify-center text-gray-400 border border-gray-200">
-                Loading...
+                {t('common.loading')}
               </div>
             )}
-            <p className="text-sm text-gray-500">Scan this at the Kiosk to log in</p>
+            <p className="text-sm text-gray-500">{t('dashboard.kiosk_instruction')}</p>
           </div>
         </div>
       )}

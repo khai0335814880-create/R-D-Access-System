@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '../store/authStore';
-import { User, Mail, Briefcase, Hash, Shield, Key, Camera, Loader, CheckCircle2 } from 'lucide-react';
+import { User, Mail, Briefcase, Hash, Shield, Key, Camera, Loader, CheckCircle2, ShieldCheck, ChevronRight } from 'lucide-react';
 import api from '../services/api';
+import { useLanguageStore } from '../store/languageStore';
 
 const ProfilePage = () => {
+  const { t } = useLanguageStore();
   const { user: storeUser, updateUser } = useAuthStore();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -20,10 +22,9 @@ const ProfilePage = () => {
       setLoading(true);
       const response = await api.get('/auth/profile');
       setProfile(response.data.user);
-      // Đồng bộ lại với store nếu cần
       updateUser({ ...storeUser, ...response.data.user });
     } catch (error) {
-      console.error('Lỗi khi lấy thông tin user:', error);
+      console.error('Failed to synchronize profile data:', error);
     } finally {
       setLoading(false);
     }
@@ -34,12 +35,12 @@ const ProfilePage = () => {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      alert('Vui lòng chọn file hình ảnh hợp lệ.');
+      alert(t('profile.invalid_image'));
       return;
     }
 
     if (file.size > 2 * 1024 * 1024) {
-      alert('Kích thước ảnh phải nhỏ hơn 2MB.');
+      alert(t('profile.file_size_limit'));
       return;
     }
 
@@ -48,8 +49,6 @@ const ProfilePage = () => {
       const reader = new FileReader();
       reader.onloadend = async () => {
         const base64String = reader.result;
-
-        // Gọi API cập nhật
         const response = await api.put('/auth/profile', {
           avatar_url: base64String
         });
@@ -57,13 +56,13 @@ const ProfilePage = () => {
         setProfile(response.data.user);
         updateUser({ ...storeUser, avatar_url: base64String });
 
-        setSuccessMsg('Đã cập nhật ảnh đại diện thành công!');
+        setSuccessMsg(t('profile.image_updated'));
         setTimeout(() => setSuccessMsg(''), 3000);
       };
       reader.readAsDataURL(file);
     } catch (error) {
-      console.error('Lỗi khi tải ảnh lên:', error);
-      alert('Cập nhật ảnh thất bại.');
+      console.error('Failed to upload asset:', error);
+      alert(t('profile.sync_failed'));
     } finally {
       setUploading(false);
     }
@@ -75,9 +74,9 @@ const ProfilePage = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[70vh]">
-        <Loader className="animate-spin text-blue-500 mb-4" size={48} />
-        <p className="text-slate-500 dark:text-slate-400 font-bold animate-pulse">Đang đồng bộ dữ liệu...</p>
+      <div className="min-h-screen bg-canvas flex flex-col items-center justify-center">
+        <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-xl"></div>
+        <p className="text-caption-bold text-graphite uppercase tracking-widest animate-pulse">{t('profile.syncing_directory')}</p>
       </div>
     );
   }
@@ -85,128 +84,91 @@ const ProfilePage = () => {
   if (!profile) return null;
 
   return (
-    <div className="w-full min-h-[calc(100vh-8rem)] flex flex-col">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-slate-800 dark:text-white tracking-tight flex items-center">
-          <User className="text-[#0F5FDC] dark:text-blue-400 mr-3" size={36} /> Tài khoản của tôi
-        </h1>
-        <p className="text-slate-500 dark:text-slate-400 mt-2">Quản lý hồ sơ định danh và đồng bộ dữ liệu hệ thống.</p>
+    <div className="min-h-screen bg-canvas text-ink font-sans p-xl">
+      {/* Header Section */}
+      <div className="mb-xxl">
+        <h1 className="text-display-md tracking-tight mb-xs">{t('profile.identity_profile')}</h1>
+        <p className="text-body-md text-charcoal">{t('profile.identity_profile_desc')}</p>
       </div>
 
       {successMsg && (
-        <div className="mb-6 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-6 py-4 rounded-2xl flex items-center shadow-sm animate-in fade-in slide-in-from-top-2">
-          <CheckCircle2 className="mr-3" size={24} />
-          <span className="font-bold">{successMsg}</span>
+        <div className="mb-xl p-md bg-green-50 border border-green-100 rounded-md text-green-700 text-caption-bold flex items-center gap-sm animate-in slide-in-from-top-2">
+          <CheckCircle2 size={18} />
+          <span>{successMsg}</span>
         </div>
       )}
 
-      {/* Main Card */}
-      <div className="flex-1 bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl rounded-3xl shadow-xl border border-slate-200/60 dark:border-slate-800/50 relative overflow-hidden flex flex-col md:flex-row">
-
-        {/* Decorative elements */}
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/5 dark:bg-blue-600/10 rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl pointer-events-none"></div>
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-indigo-500/5 dark:bg-indigo-600/10 rounded-full translate-y-1/3 -translate-x-1/3 blur-3xl pointer-events-none"></div>
-
-        {/* Sidebar / Avatar Section */}
-        <div className="w-full md:w-1/3 lg:w-1/4 bg-slate-50/50 dark:bg-slate-950/40 p-10 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-slate-200/50 dark:border-slate-800/50 relative z-10">
-
-          <div className="relative group cursor-pointer" onClick={triggerFileInput}>
-            <div className={`w-40 h-40 rounded-full p-[4px] shadow-lg transition-all duration-300 ${uploading ? 'bg-slate-300 animate-pulse' : 'bg-gradient-to-br from-indigo-500 via-blue-500 to-cyan-400 group-hover:-translate-y-1 group-hover:shadow-blue-500/25'}`}>
-              <div className="w-full h-full bg-white dark:bg-slate-900 rounded-full flex items-center justify-center overflow-hidden relative">
-                {profile.avatar_url ? (
-                  <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-indigo-600 dark:text-indigo-400 font-bold text-6xl">
-                    {profile.full_name?.charAt(0).toUpperCase()}
-                  </span>
-                )}
-
-                {/* Overlay on hover */}
-                <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <Camera className="text-white mb-2" size={28} />
-                  <span className="text-white text-xs font-semibold uppercase tracking-wider">Đổi ảnh</span>
+      {/* Main Container */}
+      <div className="bg-paper border border-fog rounded-xl shadow-floating overflow-hidden flex flex-col lg:flex-row">
+        
+        {/* Visual Identity Sidebar */}
+        <div className="lg:w-1/3 p-xxl bg-cloud/50 border-b lg:border-b-0 lg:border-r border-fog flex flex-col items-center text-center">
+          <div className="relative group cursor-pointer mb-xl" onClick={triggerFileInput}>
+            <div className={`w-48 h-48 rounded-full border-4 ${uploading ? 'border-primary/20 animate-pulse' : 'border-paper shadow-soft-lift'} overflow-hidden bg-cloud relative transition-all duration-300 group-hover:scale-[1.02]`}>
+              {profile.avatar_url ? (
+                <img src={profile.avatar_url} alt={t('profile.identity_asset')} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-primary bg-primary/5">
+                  <User size={64} strokeWidth={1} />
                 </div>
+              )}
+              
+              <div className="absolute inset-0 bg-ink/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <Camera className="text-on-ink mb-xs" size={24} />
+                <span className="text-on-ink text-[10px] font-bold uppercase tracking-widest">{t('profile.replace_identification')}</span>
               </div>
             </div>
-
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              accept="image/*"
-              className="hidden"
-            />
+            
+            <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
           </div>
 
-          <div className="mt-8 text-center">
-            <span className="px-5 py-2 bg-blue-50 dark:bg-blue-900/30 text-[#0F5FDC] dark:text-blue-400 rounded-full text-xs font-bold uppercase tracking-widest border border-blue-200 dark:border-blue-800 shadow-sm inline-block">
+          <div className="space-y-xs">
+            <span className="inline-block px-md py-xxs bg-primary text-on-ink text-[10px] font-bold uppercase tracking-widest rounded">
               {profile.role}
             </span>
-            <p className="mt-4 text-slate-500 dark:text-slate-400 font-medium tracking-tight">@{profile.username}</p>
+            <p className="text-caption-md text-charcoal font-mono mt-sm tracking-widest">@{profile.username}</p>
           </div>
         </div>
 
-        {/* Content Section */}
-        <div className="flex-1 p-8 lg:p-12 relative z-10 flex flex-col justify-center">
-          <div className="pb-6 mb-6 border-b border-slate-100 dark:border-slate-800">
-            <h2 className="text-3xl lg:text-4xl font-bold text-slate-800 dark:text-white leading-tight">{profile.full_name}</h2>
-            <div className="flex items-center mt-3">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 mr-2 shadow-emerald-500/50"></span>
-              <p className="text-emerald-600 dark:text-emerald-400 font-medium text-sm">Hồ sơ đã đồng bộ</p>
+        {/* Directory Metadata Section */}
+        <div className="lg:flex-1 p-xxl">
+          <div className="mb-xxl pb-xl border-b border-fog flex justify-between items-end">
+            <div>
+              <h2 className="text-display-sm text-ink">{profile.full_name}</h2>
+              <div className="flex items-center gap-xs mt-sm">
+                <ShieldCheck size={16} className="text-primary" />
+                <p className="text-caption-bold text-primary uppercase tracking-widest">{t('profile.verified_participant')}</p>
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8">
-
-            <div className="group flex items-start space-x-4 p-4 rounded-xl transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/30">
-              <div className="p-3 bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 rounded-xl text-blue-500 group-hover:-translate-y-1 transition-transform">
-                <Mail size={20} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-xl">
+            {[
+              { icon: Mail, label: t('profile.official_correspondence'), value: profile.email, color: 'text-primary' },
+              { icon: Briefcase, label: t('profile.operational_department'), value: profile.department || t('profile.unassigned'), color: 'text-ink' },
+              { icon: Hash, label: t('profile.personnel_serial_code'), value: profile.employee_code || 'N/A', color: 'text-ink' },
+              { icon: Shield, label: t('profile.integrity_status'), value: t('profile.active_compliance'), color: 'text-green-600' }
+            ].map((item, idx) => (
+              <div key={idx} className="group p-xl bg-cloud/30 rounded-md border border-transparent hover:border-fog transition-all">
+                <div className="flex items-start gap-md">
+                  <div className={`p-sm bg-paper rounded border border-fog shadow-sm ${item.color}`}>
+                    <item.icon size={20} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-charcoal uppercase tracking-widest mb-xxs">{item.label}</p>
+                    <p className="text-body-emphasis text-ink break-all">{item.value}</p>
+                  </div>
+                </div>
               </div>
-              <div className="flex flex-col justify-center">
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Địa chỉ Email</p>
-                <p className="text-base font-semibold text-slate-800 dark:text-slate-200 break-all">{profile.email}</p>
-              </div>
-            </div>
-
-            <div className="group flex items-start space-x-4 p-4 rounded-xl transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/30">
-              <div className="p-3 bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 rounded-xl text-indigo-500 group-hover:-translate-y-1 transition-transform">
-                <Briefcase size={20} />
-              </div>
-              <div className="flex flex-col justify-center">
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Phòng ban công tác</p>
-                <p className="text-base font-semibold text-slate-800 dark:text-slate-200">{profile.department || 'Chưa cập nhật'}</p>
-              </div>
-            </div>
-
-            <div className="group flex items-start space-x-4 p-4 rounded-xl transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/30">
-              <div className="p-3 bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 rounded-xl text-purple-500 group-hover:-translate-y-1 transition-transform">
-                <Hash size={20} />
-              </div>
-              <div className="flex flex-col justify-center">
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Mã nhân viên (ID)</p>
-                <p className="text-base font-semibold text-slate-800 dark:text-slate-200">{profile.employee_id || 'N/A'}</p>
-              </div>
-            </div>
-
-            <div className="group flex items-start space-x-4 p-4 rounded-xl transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/30">
-              <div className="p-3 bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 rounded-xl text-emerald-500 group-hover:-translate-y-1 transition-transform">
-                <Shield size={20} />
-              </div>
-              <div className="flex flex-col justify-center">
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Trạng thái định danh</p>
-                <p className="text-base font-semibold text-emerald-600 dark:text-emerald-400 flex items-center">
-                  Hợp lệ (Verified)
-                </p>
-              </div>
-            </div>
-
+            ))}
           </div>
 
-          {/* Action Buttons */}
-          <div className="mt-auto pt-8 flex gap-4">
-            <button className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-6 py-3 rounded-xl font-semibold transition-colors flex items-center justify-center border border-slate-200 dark:border-slate-700 shadow-sm">
-              <Key size={18} className="mr-2" />
-              Đổi mật khẩu bảo mật
+          <div className="mt-xxl pt-xl border-t border-fog flex flex-col sm:flex-row gap-md">
+            <button className="flex-1 sm:flex-none px-xl py-sm bg-ink text-on-ink rounded-md font-bold text-caption-bold hover:bg-charcoal transition shadow-soft-lift flex items-center justify-center gap-xs">
+              <Key size={16} /> {t('profile.update_security_token')}
+            </button>
+            <button className="flex-1 sm:flex-none px-xl py-sm bg-cloud text-ink rounded-md font-bold text-caption-bold hover:bg-fog border border-fog transition flex items-center justify-center gap-xs">
+              {t('profile.synchronize_external_data')} <ChevronRight size={16} />
             </button>
           </div>
         </div>

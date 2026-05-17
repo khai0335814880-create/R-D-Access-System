@@ -59,6 +59,24 @@ export const useDeviceStore = create((set) => ({
     }
   },
 
+  // Delete device
+  deleteDevice: async (id) => {
+    set({ isLoading: true, error: null });
+    try {
+      await deviceService.deleteDevice(id);
+      set((state) => ({
+        devices: state.devices.filter((d) => d.device_id !== id),
+        isLoading: false,
+      }));
+    } catch (error) {
+      set({
+        error: error.response?.data?.message || 'Failed to delete device',
+        isLoading: false,
+      });
+      throw error;
+    }
+  },
+
   // Get pending requests (for managers)
   fetchPendingRequests: async () => {
     set({ isLoading: true, error: null });
@@ -81,7 +99,7 @@ export const useDeviceStore = create((set) => ({
     try {
       const data = await deviceService.approveDevice(requestId, comments);
       set((state) => ({
-        pendingRequests: state.pendingRequests.filter((r) => r.id !== requestId),
+        pendingRequests: state.pendingRequests.filter((r) => r.request_id !== requestId),
         isLoading: false,
       }));
       return data;
@@ -100,7 +118,7 @@ export const useDeviceStore = create((set) => ({
     try {
       const data = await deviceService.rejectDevice(requestId, comments);
       set((state) => ({
-        pendingRequests: state.pendingRequests.filter((r) => r.id !== requestId),
+        pendingRequests: state.pendingRequests.filter((r) => r.request_id !== requestId),
         isLoading: false,
       }));
       return data;
@@ -111,5 +129,12 @@ export const useDeviceStore = create((set) => ({
       });
       throw error;
     }
+  },
+  // Add approved device manually (for real-time updates)
+  addApprovedDevice: (device) => {
+    set((state) => ({
+      approvedDevices: [...state.approvedDevices, device],
+      devices: [...state.devices, device]
+    }));
   },
 }));

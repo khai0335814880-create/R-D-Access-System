@@ -34,7 +34,7 @@ exports.updateUserStatus = async (req, res) => {
     }
 
     // Log the change
-    await logActivity(req.user.id, 'user_update', `Updated user ${user.username}: status=${status}, role=${role}`);
+    await logActivity(req.user.id, 'user_update', `Cập nhật người dùng ${user.username}: status=${status}, role=${role}`, { target_user_id: id, status, role });
 
     res.json({ message: 'User updated successfully', user });
   } catch (error) {
@@ -51,7 +51,7 @@ exports.deleteUser = async (req, res) => {
     }
 
     // Log the deletion
-    await logActivity(req.user.id, 'user_deletion', `Deleted user: ${user.username}`);
+    await logActivity(req.user.id, 'user_deletion', `Xóa người dùng: ${user.username}`, { target_user_id: id });
 
     res.json({ message: 'User deleted successfully' });
   } catch (error) {

@@ -1,16 +1,17 @@
 import api from './api';
 
 export const accessService = {
-  checkIn: async (deviceIds, entryPhoto) => {
+  checkIn: async (deviceIds, entryPhoto, forceCloseOld = false) => {
     const response = await api.post('/access/check-in', { 
       device_ids: deviceIds,
-      entry_photo: entryPhoto 
+      entry_photo: entryPhoto,
+      force_close_old: forceCloseOld
     });
     return response.data;
   },
 
-  checkOut: async () => {
-    const response = await api.post('/access/check-out');
+  checkOut: async (exitPhoto) => {
+    const response = await api.post('/access/check-out', { exit_photo: exitPhoto });
     return response.data;
   },
 
@@ -37,6 +38,17 @@ export const accessService = {
 
   getPersonalStats: async () => {
     const response = await api.get('/access/personal-stats');
+    return response.data;
+  },
+
+  // Admin Session Management
+  getAdminSessions: async (status) => {
+    const response = await api.get('/access/admin/sessions', { params: { status } });
+    return response.data;
+  },
+
+  forceCloseSession: async (sessionId, notes) => {
+    const response = await api.post(`/access/admin/sessions/${sessionId}/force-close`, { notes });
     return response.data;
   }
 };

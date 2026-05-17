@@ -2,6 +2,39 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&display=swap');
+
+html,
+body,
+#root {
+  font-family: 'Manrope', sans-serif;
+}
+
+/* Custom Design Utilities */
+.bg-nexus-gradient {
+  background: radial-gradient(circle at top left, #f0f4ff 0%, #ffffff 50%, #f9f7ff 100%);
+}
+
+.text-gradient-purple {
+  background: linear-gradient(90deg, #002C77 0%, #7127FF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.glass-effect {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.blob-shape {
+  position: absolute;
+  z-index: 1;
+  filter: blur(60px);
+  opacity: 0.15;
+  pointer-events: none;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -9,10 +42,12 @@
 }
 
 body {
-  font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #020617; /* Darker modern background by default */
+  background-color: #ffffff;
+  /* Canvas background */
+  color: #1a1a1a;
+  /* Ink color */
 }
 
 code {
@@ -39,45 +74,94 @@ code {
   background: #555;
 }
 
-/* Custom modern animations */
-@keyframes gradient-bg {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+/* Custom utilities */
+.shadow-soft-lift {
+  box-shadow: 0 2px 8px rgba(26, 26, 26, 0.08);
 }
 
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-12px); }
+.shadow-floating {
+  box-shadow: 0 8px 24px rgba(26, 26, 26, 0.12);
 }
 
-@keyframes pulse-glow {
-  0%, 100% { 
-    box-shadow: 0 0 20px rgba(15, 95, 220, 0.15); 
-    border-color: rgba(15, 95, 220, 0.3);
-  }
-  50% { 
-    box-shadow: 0 0 35px rgba(15, 95, 220, 0.4); 
-    border-color: rgba(15, 95, 220, 0.6);
-  }
+/* Base typography utilities */
+.text-display-xxl {
+  font-size: 84px;
+  font-weight: 800;
+  line-height: 1.0;
+  tracking: -0.02em;
 }
 
-.animate-gradient-bg {
-  background-size: 200% 200%;
-  animation: gradient-bg 12s ease infinite;
+.text-display-xl {
+  font-size: 64px;
+  font-weight: 700;
+  line-height: 1.05;
+  tracking: -0.01em;
 }
 
-.animate-float {
-  animation: float 5s ease-in-out infinite;
+.text-display-lg {
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1.1;
 }
 
-.animate-pulse-glow {
-  animation: pulse-glow 3s ease-in-out infinite;
+.text-display-md {
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
-/* Glassmorphism utility */
-.glass-panel {
-  background: rgba(15, 23, 42, 0.65);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+.text-display-sm {
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.text-display-xs {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.text-body-lg {
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.text-body-md {
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.text-body-emphasis {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.text-caption-md {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.text-caption-bold {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.text-caption-sm {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.33;
+}
+
+.button-label-md {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
 }

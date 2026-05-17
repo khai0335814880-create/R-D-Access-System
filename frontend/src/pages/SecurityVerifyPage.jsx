@@ -12,7 +12,9 @@ import {
   ChevronRight,
   History,
   Info,
-  Scan
+  Scan,
+  Activity,
+  Cpu
 } from 'lucide-react';
 import Alert from '../components/Alert';
 
@@ -28,13 +30,22 @@ const SecurityVerifyPage = () => {
   const successAudio = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3'));
   const errorAudio = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3'));
 
+  const playAudioSafely = (audioRef) => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      const playPromise = audioRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(err => console.log('Audio playback prevented or interrupted:', err));
+      }
+    }
+  };
+
   const handleScan = async (decodedText) => {
     if (loading || decodedText === lastScanned) return;
     
     setLoading(true);
     setLastScanned(decodedText);
     try {
-      // identifier is passed as is. If JSON, backend handles it.
       const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/access/verify/${encodeURIComponent(decodedText)}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -50,19 +61,19 @@ const SecurityVerifyPage = () => {
       setVerificationData(data);
       
       if (data.verificationResult.deviceMatch === false) {
-        errorAudio.current.play();
-        setMessage('CẢNH BÁO: Thiết bị KHÔNG KHỚP với nhân viên này!');
+        playAudioSafely(errorAudio);
+        setMessage('SECURITY BREACH: Device mismatch detected for this participant.');
         setMessageType('error');
       } else {
-        successAudio.current.play();
-        setMessage('Thông tin hợp lệ.');
+        playAudioSafely(successAudio);
+        setMessage('Identity and asset validation successful.');
         setMessageType('success');
       }
       
       setIsScanning(false);
     } catch (err) {
-      errorAudio.current.play();
-      setMessage(err.message || 'Lỗi hệ thống khi đối soát');
+      playAudioSafely(errorAudio);
+      setMessage(err.message || 'Verification terminal error. System fault.');
       setMessageType('error');
     } finally {
       setLoading(false);
@@ -77,130 +88,127 @@ const SecurityVerifyPage = () => {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto min-h-screen">
-      <div className="mb-8">
-        <h1 className="text-3xl font-black text-slate-800 tracking-tight flex items-center">
-          <ShieldCheck className="text-indigo-600 mr-3" size={36} /> TRẠM ĐỐI SOÁT AN NINH
-        </h1>
-        <p className="text-slate-500 mt-2 font-medium">Xác thực nhân viên và thiết bị tại cổng ra vào phòng R&D</p>
+    <div className="min-h-screen bg-canvas text-ink font-sans p-xl">
+      {/* Header Section */}
+      <div className="mb-xxl">
+        <h1 className="text-display-md tracking-tight mb-xs">Security Verification Terminal</h1>
+        <p className="text-body-md text-charcoal">Validate personnel credentials and provisioned hardware assets at laboratory ingress points.</p>
       </div>
 
       {message && (
-        <div className="mb-6">
+        <div className="mb-xl animate-in slide-in-from-top-2">
           <Alert message={message} type={messageType} onClose={() => setMessage('')} />
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Scanner Side */}
-        <div className="bg-slate-900 rounded-none p-8 shadow-2xl border-4 border-slate-800 flex flex-col items-center justify-center min-h-[500px] relative overflow-hidden">
-           {/* Radar decoration */}
-           <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 border border-indigo-500/10 rounded-full animate-ping"></div>
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 border border-indigo-500/20 rounded-full"></div>
-           </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-xl">
+        {/* Terminal Scanner Side */}
+        <div className="bg-paper border border-fog rounded-xl shadow-floating flex flex-col items-center justify-center min-h-[500px] relative overflow-hidden group">
+           {/* Scan Overlay Effect */}
+           {isScanning && (
+             <div className="absolute top-0 left-0 w-full h-1 bg-primary/20 animate-[scan_3s_ease-in-out_infinite] z-20 pointer-events-none"></div>
+           )}
 
            {isScanning ? (
-              <div className="w-full max-w-md z-10">
-                <div className="text-center mb-6">
-                   <div className="inline-block p-4 bg-indigo-500/10 rounded-full text-indigo-400 mb-4">
-                      <Scan size={32} />
-                   </div>
-                   <h2 className="text-xl font-bold text-white mb-2">Đang Đợi Quét...</h2>
-                   <p className="text-slate-500 text-sm">Vui lòng quét Thẻ Nhân Viên hoặc Mã QR Thiết Bị</p>
-                </div>
-                <div className="rounded-none overflow-hidden border-2 border-indigo-500/50 shadow-[0_0_30px_rgba(79,70,229,0.2)]">
-                   <QRScanner onScanSuccess={handleScan} />
-                </div>
+              <div className="w-full max-w-md z-10 p-xxl text-center">
+                 <div className="inline-flex p-md bg-cloud rounded-full text-primary mb-xl border border-fog">
+                    <Scan size={32} />
+                 </div>
+                 <h2 className="text-display-xs text-ink mb-md">Awaiting Token Scan</h2>
+                 <p className="text-caption-md text-charcoal mb-xxl">Present personnel badge or asset identity tag to the optical sensor.</p>
+                 <div className="rounded-xl overflow-hidden border border-primary shadow-soft-lift bg-cloud relative">
+                    <QRScanner onScanSuccess={handleScan} />
+                    <div className="absolute inset-0 border-2 border-primary/20 pointer-events-none rounded-xl"></div>
+                 </div>
               </div>
            ) : (
-              <div className="text-center z-10 w-full animate-in zoom-in-95 duration-300">
-                <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 ${verificationData?.verificationResult.deviceMatch === false ? 'bg-rose-500/20 text-rose-500 border-2 border-rose-500' : 'bg-emerald-500/20 text-emerald-500 border-2 border-emerald-500'}`}>
+              <div className="text-center z-10 w-full p-xxl animate-in zoom-in-95 duration-300">
+                <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-xl border-4 ${verificationData?.verificationResult.deviceMatch === false ? 'bg-red-50 text-red-600 border-red-100' : 'bg-green-50 text-green-600 border-green-100'}`}>
                    {verificationData?.verificationResult.deviceMatch === false ? <XCircle size={48} /> : <CheckCircle2 size={48} />}
                 </div>
-                <h2 className="text-2xl font-black text-white mb-8">KẾT QUẢ ĐỐI SOÁT</h2>
+                <h2 className="text-display-sm text-ink mb-xxl">Verification Sequence Result</h2>
                 <button 
                   onClick={resetScanner}
-                  className="px-10 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-none font-bold transition shadow-lg shadow-indigo-600/30"
+                  className="px-xl py-sm bg-primary text-on-ink rounded-md font-bold hover:bg-primary-deep transition shadow-soft-lift uppercase tracking-widest text-caption-bold"
                 >
-                  QUÉT TIẾP THEO
+                  Initiate New Verification
                 </button>
               </div>
            )}
         </div>
 
-        {/* Results Info Side */}
-        <div className="space-y-6">
+        {/* Intelligence Side */}
+        <div className="space-y-xl">
            {verificationData ? (
-             <div className="bg-white rounded-none shadow-xl border border-slate-100 overflow-hidden animate-in slide-in-from-right-8 duration-500">
-                <div className="bg-slate-50 p-6 border-b border-slate-100 flex items-center gap-4">
-                   <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-slate-200">
-                      {verificationData.session?.entry_photo ? (
-                        <img src={verificationData.session.entry_photo} className="w-full h-full object-cover" alt="Check-in Face" />
+             <div className="bg-paper border border-fog rounded-xl shadow-floating overflow-hidden animate-in slide-in-from-right-8 duration-500">
+                <div className="bg-cloud p-xl border-b border-fog flex items-center gap-xl">
+                   <div className="w-16 h-16 rounded-full overflow-hidden border border-fog bg-white shrink-0">
+                      {verificationData.user.avatar_url ? (
+                        <img src={verificationData.user.avatar_url} className="w-full h-full object-cover" alt="User Identity" />
                       ) : (
-                        <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-400">
+                        <div className="w-full h-full flex items-center justify-center text-graphite opacity-30">
                            <User size={32} />
                         </div>
                       )}
                    </div>
                    <div>
-                      <h3 className="text-xl font-bold text-slate-900">{verificationData.user.full_name}</h3>
-                      <p className="text-slate-500 text-sm">@{verificationData.user.username} • {verificationData.user.employee_id}</p>
+                      <h3 className="text-body-emphasis text-ink">{verificationData.user.full_name}</h3>
+                      <p className="text-caption-md text-charcoal font-mono">@{verificationData.user.username} • {verificationData.user.employee_code}</p>
                    </div>
                    <div className="ml-auto">
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${verificationData.verificationResult.isInside ? 'bg-emerald-100 text-emerald-600 border border-emerald-200' : 'bg-slate-100 text-slate-400 border border-slate-200'}`}>
-                         {verificationData.verificationResult.isInside ? 'ĐANG TRONG PHÒNG' : 'CHƯA CHECK-IN'}
+                      <span className={`px-sm py-xxs rounded text-[10px] font-bold uppercase tracking-widest border ${verificationData.verificationResult.isInside ? 'bg-green-50 text-green-700 border-green-200' : 'bg-cloud text-graphite border-fog'}`}>
+                         {verificationData.verificationResult.isInside ? 'Currently On-Premise' : 'Off-Premise'}
                       </span>
                    </div>
                 </div>
 
-                <div className="p-8">
-                   {/* Context Alert for Device Match */}
+                <div className="p-xl">
+                   {/* Verification Detail */}
                    {verificationData.verificationResult.scannedDevice && (
-                     <div className={`mb-8 p-4 rounded-none border flex items-start ${verificationData.verificationResult.deviceMatch ? 'bg-emerald-50 border-emerald-100 text-emerald-800' : 'bg-rose-50 border-rose-100 text-rose-800'}`}>
-                        <div className="mr-3 mt-1">
-                           {verificationData.verificationResult.deviceMatch ? <CheckCircle2 size={24} /> : <AlertTriangle size={24} />}
+                     <div className={`mb-xl p-xl rounded-md border flex items-start gap-md ${verificationData.verificationResult.deviceMatch ? 'bg-green-50 border-green-100 text-green-900' : 'bg-red-50 border-red-100 text-red-900'}`}>
+                        <div className="shrink-0 mt-xxs">
+                           {verificationData.verificationResult.deviceMatch ? <CheckCircle2 size={24} /> : <AlertTriangle size={24} className="animate-pulse" />}
                         </div>
                         <div>
-                           <p className="font-bold uppercase text-[10px] tracking-widest mb-1">Thiết bị vừa quét</p>
-                           <p className="text-lg font-black">
-                              {verificationData.verificationResult.scannedDevice.brand} {verificationData.verificationResult.scannedDevice.model}
+                           <p className="text-[10px] font-bold uppercase tracking-widest mb-xxs opacity-60">Provisioned Asset Validation</p>
+                           <p className="text-body-emphasis mb-xxs">
+                              {verificationData.verificationResult.scannedDevice.brand} {verificationData.verificationResult.scannedDevice.model_name}
                            </p>
-                           <p className="text-xs opacity-70">S/N: {verificationData.verificationResult.scannedDevice.serial_number}</p>
+                           <p className="text-[10px] font-mono opacity-60 uppercase tracking-widest">S/N: {verificationData.verificationResult.scannedDevice.serial_number}</p>
                            {!verificationData.verificationResult.deviceMatch && (
-                             <p className="mt-2 font-bold text-sm bg-rose-600 text-white px-3 py-1 rounded-none inline-block">
-                                LỖI: THIẾT BỊ NÀY THUỘC VỀ NGƯỜI KHÁC HOẶC CHƯA DUYỆT
+                             <p className="mt-md font-bold text-[10px] bg-red-600 text-white px-md py-xxs rounded uppercase tracking-widest shadow-sm">
+                                Protocol Violation: Asset not registered to participant
                              </p>
                            )}
                         </div>
                      </div>
                    )}
 
-                   <h4 className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mb-4 flex items-center">
-                      <Laptop size={14} className="mr-2" /> Danh sách thiết bị được phép mang vào
-                   </h4>
-                   <div className="space-y-3">
+                   <div className="flex items-center gap-xs text-graphite mb-xl pb-sm border-b border-fog">
+                      <Cpu size={14} />
+                      <h4 className="text-[10px] font-bold uppercase tracking-widest">Authorized Physical Inventory</h4>
+                   </div>
+                   
+                   <div className="space-y-md">
                       {verificationData.approvedDevices.map(device => {
-                        const isScanned = verificationData.verificationResult.scannedDevice?.id === device.id;
+                        const isScanned = verificationData.verificationResult.scannedDevice?.device_id === device.device_id;
                         return (
-                          <div key={device.id} className={`p-4 rounded-none border flex items-center justify-between transition-all ${isScanned ? 'bg-emerald-50 border-emerald-500 shadow-md scale-[1.02]' : 'bg-white border-slate-100'}`}>
-                             <div className="flex items-center">
-                                <div className={`p-2 rounded-none mr-4 ${isScanned ? 'bg-emerald-500 text-white' : 'bg-slate-50 text-slate-400'}`}>
-                                   {device.device_type === 'Laptop' ? <Laptop size={18} /> : <Smartphone size={18} />}
+                          <div key={device.device_id} className={`p-md rounded border flex items-center justify-between transition-all ${isScanned ? 'bg-green-50 border-primary shadow-soft-lift scale-[1.01]' : 'bg-paper border-fog/50'}`}>
+                             <div className="flex items-center gap-md">
+                                <div className={`p-sm rounded ${isScanned ? 'bg-primary text-on-ink' : 'bg-cloud text-graphite'}`}>
+                                   {device.device_type === 'Laptop' ? <Laptop size={16} /> : <Smartphone size={16} />}
                                 </div>
                                 <div>
-                                   <p className="font-bold text-slate-800">{device.brand} {device.model}</p>
-                                   <p className="text-[10px] font-mono text-slate-400">{device.serial_number}</p>
+                                   <p className="text-caption-bold text-ink">{device.brand} {device.model_name}</p>
+                                   <p className="text-[10px] font-mono text-charcoal tracking-widest">{device.serial_number}</p>
                                 </div>
                              </div>
                              {isScanned ? (
-                               <div className="flex items-center text-emerald-600 font-bold text-xs">
-                                  <CheckCircle2 size={16} className="mr-1" /> KHỚP
+                               <div className="flex items-center text-primary font-bold text-[10px] uppercase tracking-widest">
+                                  <CheckCircle2 size={14} className="mr-xxs" /> Validation Match
                                </div>
                              ) : (
-                               <div className="text-slate-300">
-                                  <ChevronRight size={18} />
-                               </div>
+                               <ChevronRight size={16} className="text-fog" />
                              )}
                           </div>
                         )
@@ -209,38 +217,33 @@ const SecurityVerifyPage = () => {
                 </div>
              </div>
            ) : (
-             <div className="bg-white rounded-none border-2 border-dashed border-slate-200 p-20 text-center flex flex-col items-center justify-center h-full">
-                <History size={64} className="text-slate-200 mb-6" />
-                <h3 className="text-xl font-bold text-slate-400">Đang đợi dữ liệu đối soát...</h3>
-                <p className="text-slate-300 mt-2 max-w-xs">Quét mã QR nhân viên hoặc thiết bị để bắt đầu quy trình xác thực</p>
+             <div className="bg-paper rounded-xl border border-fog p-xxxl text-center flex flex-col items-center justify-center h-full shadow-soft-lift">
+                <Activity size={48} className="text-graphite opacity-20 mb-xl" />
+                <h3 className="text-body-emphasis text-ink mb-xs uppercase tracking-widest">Ready for Verification</h3>
+                <p className="text-caption-md text-charcoal max-w-xs">Scan credentials or asset tags to initiate identity validation protocol.</p>
              </div>
            )}
 
-           {/* Quick Stats/Info */}
-           <div className="bg-indigo-600 rounded-none p-8 text-white shadow-xl relative overflow-hidden shadow-indigo-600/30">
-              <div className="relative z-10 flex items-center gap-6">
-                 <div className="bg-white/20 p-4 rounded-none backdrop-blur-md">
+           {/* Security Status Indicator */}
+           <div className="bg-primary p-xl rounded-xl text-on-ink shadow-floating relative overflow-hidden group">
+              <div className="relative z-10 flex items-center gap-xl">
+                 <div className="bg-paper/10 p-md rounded-md backdrop-blur-md border border-paper/10">
                     <ShieldCheck size={32} />
                  </div>
                  <div>
-                    <h3 className="font-black text-xl leading-tight">CHẾ ĐỘ AN NINH CAO</h3>
-                    <p className="text-indigo-100 text-sm mt-1">Mọi dữ liệu ra vào đều được mã hóa và lưu nhật ký đối soát 24/7.</p>
+                    <h3 className="text-body-emphasis uppercase tracking-widest">High Integrity Mode</h3>
+                    <p className="text-caption-md text-on-ink/80 mt-xxs">Automated audit trail enabled. System operational status: NOMINAL.</p>
                  </div>
               </div>
-              <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
+              <div className="absolute -bottom-xl -right-xl w-32 h-32 bg-paper/5 rounded-full blur-2xl group-hover:scale-110 transition-transform"></div>
            </div>
         </div>
       </div>
 
       <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes ping {
-          75%, 100% {
-            transform: translate(-50%, -50%) scale(2);
-            opacity: 0;
-          }
-        }
-        .animate-ping {
-          animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+        @keyframes scan {
+          0% { transform: translateY(0); }
+          100% { transform: translateY(500px); }
         }
       ` }} />
     </div>

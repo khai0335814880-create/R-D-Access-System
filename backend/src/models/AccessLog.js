@@ -1,36 +1,23 @@
 const pool = require('../config/database');
 
 class AccessLog {
-  static async create(accessData) {
-    const { user_id, device_ids, status, entry_photo } = accessData;
-    const result = await pool.query(
-      `INSERT INTO access_logs (user_id, device_ids, status, entry_photo) 
-       VALUES ($1, $2, $3, $4) RETURNING *`,
-      [user_id, device_ids, status, entry_photo]
+  static async create(data) {
+    const { event_type, user_id, session_id, device_id, scanned_qr_value, auth_method, result, alert_message, ip_address } = data;
+    const res = await pool.query(
+      `INSERT INTO access_logs (event_type, user_id, session_id, device_id, scanned_qr_value, auth_method, result, alert_message, ip_address) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+      [event_type, user_id, session_id, device_id, scanned_qr_value, auth_method, result, alert_message, ip_address]
     );
-    return result.rows[0];
-  }
-
-  static async checkOut(log_id) {
-    const result = await pool.query(
-      `UPDATE access_logs SET check_out_time = CURRENT_TIMESTAMP, status = 'checked_out' 
-       WHERE id = $1 RETURNING *`,
-      [log_id]
-    );
-    return result.rows[0];
-  }
-
-  static async findActiveByUser(user_id) {
-    const result = await pool.query(
-      `SELECT * FROM access_logs WHERE user_id = $1 AND status = 'checked_in' 
-       ORDER BY check_in_time DESC LIMIT 1`,
-      [user_id]
-    );
-    return result.rows[0];
+    return res.rows[0];
   }
 
   static async findAll(filters = {}) {
-    let query = 'SELECT al.*, u.full_name, u.username FROM access_logs al LEFT JOIN users u ON al.user_id = u.id WHERE 1=1';
+    let query = `
+      SELECT al.*, u.full_name, u.username, u.employee_code, u.avatar_url 
+      FROM access_logs al 
+      LEFT JOIN users u ON al.user_id = u.user_id 
+      WHERE 1=1
+    `;
     const values = [];
 
     if (filters.user_id) {
@@ -38,21 +25,27 @@ class AccessLog {
       values.push(filters.user_id);
     }
 
-    if (filters.status) {
-      query += ' AND al.status = $' + (values.length + 1);
-      values.push(filters.status);
+    if (filters.event_type) {
+      query += ' AND al.event_type = $' + (values.length + 1);
+      values.push(filters.event_type);
     }
 
-    query += ' ORDER BY al.check_in_time DESC';
+    query += ' ORDER BY al.created_at DESC';
     const result = await pool.query(query, values);
     return result.rows;
   }
 
   static async getRecentActivity(limit = 50) {
     const result = await pool.query(
-      `SELECT al.*, u.full_name, u.username FROM access_logs al
-       JOIN users u ON al.user_id = u.id
-       ORDER BY al.check_in_time DESC LIMIT $1`,
+      `SELECT 
+        al.*, 
+        u.full_name, u.username, u.employee_code, u.avatar_url,
+        s.face_image_url as entry_photo,
+        (SELECT COUNT(*) FROM session_devices sd WHERE sd.session_id = al.session_id) as device_count
+       FROM access_logs al
+       LEFT JOIN users u ON al.user_id = u.user_id
+       LEFT JOIN sessions s ON al.session_id = s.session_id
+       ORDER BY al.created_at DESC LIMIT $1`,
       [limit]
     );
     return result.rows;
@@ -60,3 +53,4 @@ class AccessLog {
 }
 
 module.exports = AccessLog;
+

@@ -13,15 +13,15 @@ const CameraCapture = ({ onCapture, autoCapture = false }) => {
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
       }
-      
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
+
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: {
           facingMode: 'user',
           width: { ideal: 640 },
-          height: { ideal: 480 }
-        } 
+          height: { ideal: 500 }
+        }
       });
-      
+
       setStream(mediaStream);
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
@@ -50,11 +50,11 @@ const CameraCapture = ({ onCapture, autoCapture = false }) => {
       const video = videoRef.current;
       const canvas = canvasRef.current;
       const context = canvas.getContext('2d');
-      
+
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      
+
       const imageData = canvas.toDataURL('image/jpeg', 0.8);
       setCapturedImage(imageData);
       onCapture(imageData);
@@ -67,39 +67,39 @@ const CameraCapture = ({ onCapture, autoCapture = false }) => {
   };
 
   return (
-    <div className="w-full max-w-sm mx-auto bg-slate-900 rounded-none overflow-hidden shadow-2xl border-4 border-slate-700 relative group">
+    <div className="w-full max-w-[400px] mx-auto bg-slate-900 rounded-2xl overflow-hidden shadow-2xl border-4 border-slate-700 relative group">
       {!capturedImage ? (
-        <div className="relative aspect-[4/3] bg-black flex items-center justify-center">
+        <div className="relative w-full aspect-square bg-black flex items-center justify-center">
           {error ? (
             <div className="text-center p-6">
               <p className="text-rose-400 font-bold mb-4">{error}</p>
-              <button 
+              <button
                 onClick={startCamera}
-                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-none text-white transition"
+                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-2xl text-white transition"
               >
                 Thử lại
               </button>
             </div>
           ) : (
             <>
-              <video 
+              <video
                 ref={(el) => {
                   videoRef.current = el;
                   if (el && stream && el.srcObject !== stream) {
                     el.srcObject = stream;
                   }
-                }} 
-                autoPlay 
-                playsInline 
+                }}
+                autoPlay
+                playsInline
                 muted
                 className="w-full h-full object-cover mirror"
                 style={{ transform: 'scaleX(-1)' }} // Mirror view for user
               />
               <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                 <div className="w-48 h-64 border-2 border-white/30 rounded-none border-dashed"></div>
+                <div className="w-48 h-64 border-2 border-white/30 rounded-2xl border-dashed"></div>
               </div>
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10">
-                <button 
+                <button
                   onClick={capturePhoto}
                   className="w-16 h-16 bg-white hover:bg-blue-50 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110 active:scale-95 border-4 border-blue-500/30"
                 >
@@ -107,7 +107,7 @@ const CameraCapture = ({ onCapture, autoCapture = false }) => {
                 </button>
               </div>
               <div className="absolute top-4 left-4">
-                <span className="bg-red-600 text-white text-[10px] font-black px-2 py-1 rounded-none flex items-center">
+                <span className="bg-red-600 text-white text-[10px] font-black px-2 py-1 rounded-2xl flex items-center">
                   <span className="w-2 h-2 bg-white rounded-full animate-pulse mr-1"></span> LIVE
                 </span>
               </div>
@@ -115,10 +115,10 @@ const CameraCapture = ({ onCapture, autoCapture = false }) => {
           )}
         </div>
       ) : (
-        <div className="relative aspect-[4/3] bg-black">
-          <img 
-            src={capturedImage} 
-            alt="Captured" 
+        <div className="relative w-full aspect-square bg-black">
+          <img
+            src={capturedImage}
+            alt="Captured"
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-emerald-500/20 flex items-center justify-center">
@@ -127,9 +127,9 @@ const CameraCapture = ({ onCapture, autoCapture = false }) => {
             </div>
           </div>
           <div className="absolute bottom-4 right-4 flex gap-2">
-            <button 
+            <button
               onClick={retake}
-              className="px-4 py-2 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white rounded-none text-xs font-bold transition flex items-center"
+              className="px-4 py-2 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white rounded-2xl text-xs font-bold transition flex items-center"
             >
               <RefreshCw size={14} className="mr-2" /> Chụp lại
             </button>
@@ -139,7 +139,7 @@ const CameraCapture = ({ onCapture, autoCapture = false }) => {
       <canvas ref={canvasRef} className="hidden" />
       <div className="p-3 bg-slate-800 border-t border-slate-700 flex items-center justify-center">
         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center">
-           <ShieldCheck size={12} className="mr-1 text-blue-500" /> Identity Verification Active
+          <ShieldCheck size={12} className="mr-1 text-blue-500" /> Identity Verification Active
         </p>
       </div>
     </div>

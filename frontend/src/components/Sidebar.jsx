@@ -1,9 +1,9 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../store/authStore';
 import { 
   MonitorSmartphone, 
-  CheckSquare, 
   ShieldAlert, 
   History,
   Users,
@@ -17,42 +17,46 @@ import {
   ShieldCheck,
   ClipboardCheck,
   HelpCircle,
-  Settings
+  Settings,
+  Clock
 } from 'lucide-react';
 
 const Sidebar = ({ isExpanded, toggleSidebar }) => {
+  const { t } = useTranslation();
   const { user, logout } = useAuthStore();
+  const navigate = useNavigate();
 
   const getMenuItems = () => {
     const roleItems = [];
     switch (user?.role) {
       case 'engineer':
         roleItems.push(
-          { path: '/engineer-stats', icon: PieChart, label: 'Thống kê cá nhân' },
-          { path: '/devices', icon: MonitorSmartphone, label: 'Danh mục thiết bị' },
-          { path: '/register-device', icon: PlusCircle, label: 'Đăng ký thiết bị' },
-          { path: '/qr-tags', icon: QrCode, label: 'Tải mã QR' },
+          { path: '/engineer-stats', icon: PieChart, label: t('stats.performance_analytics') },
+          { path: '/devices', icon: MonitorSmartphone, label: t('sidebar.my_devices') },
+          { path: '/register-device', icon: PlusCircle, label: t('sidebar.register_new') },
+          { path: '/qr-tags', icon: QrCode, label: t('sidebar.qr_tags') },
         );
         break;
       case 'manager':
         roleItems.push(
-          { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-          { path: '/approvals', icon: ClipboardCheck, label: 'Phê duyệt thiết bị' },
-          { path: '/users', icon: Users, label: 'Quản lý nhân sự' },
-          { path: '/audit', icon: History, label: 'Lịch sử ra vào' },
+          { path: '/dashboard', icon: LayoutDashboard, label: t('common.dashboard') },
+          { path: '/approvals', icon: ClipboardCheck, label: t('approvals.approval_requests') },
+          { path: '/users', icon: Users, label: t('sidebar.directory') },
+          { path: '/audit', icon: History, label: t('sidebar.access_logs') },
         );
         break;
       case 'admin':
         roleItems.push(
-          { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-          { path: '/users', icon: Users, label: 'Quản lý nhân sự' },
-          { path: '/audit', icon: History, label: 'Nhật ký hệ thống' },
+          { path: '/dashboard', icon: LayoutDashboard, label: t('common.dashboard') },
+          { path: '/users', icon: Users, label: t('sidebar.personnel') },
+          { path: '/sessions', icon: Clock, label: t('sidebar.session_management') },
+          { path: '/audit', icon: History, label: t('sidebar.system_audit') },
         );
         break;
       case 'security':
         roleItems.push(
-          { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-          { path: '/audit', icon: History, label: 'Lịch sử ra vào' },
+          { path: '/dashboard', icon: LayoutDashboard, label: t('common.dashboard') },
+          { path: '/audit', icon: History, label: t('sidebar.security_logs') },
         );
         break;
       default:
@@ -61,15 +65,15 @@ const Sidebar = ({ isExpanded, toggleSidebar }) => {
 
     return [
       {
-        category: 'DANH MỤC CHÍNH',
+        category: t('sidebar.main_operations'),
         items: roleItems
       },
       {
-        category: 'TIỆN ÍCH & HỖ TRỢ',
+        category: t('common.support'),
         items: [
-          { path: '/rules', icon: ShieldCheck, label: 'Quy định R&D' },
-          { path: '/support', icon: HelpCircle, label: 'Hỗ trợ kỹ thuật' },
-          { path: '/settings', icon: Settings, label: 'Cài đặt' },
+          { path: '/rules', icon: ShieldCheck, label: t('sidebar.compliance') },
+          { path: '/support', icon: HelpCircle, label: t('sidebar.tech_help') },
+          { path: '/settings', icon: Settings, label: t('sidebar.preferences') },
         ]
       }
     ];
@@ -78,38 +82,44 @@ const Sidebar = ({ isExpanded, toggleSidebar }) => {
   const navGroups = getMenuItems();
 
   return (
-    <aside className={`bg-slate-950 border-r border-slate-800/50 text-white transition-all duration-300 ease-in-out flex flex-col h-full ${isExpanded ? 'w-64' : 'w-20'}`}>
-      <div className="p-4 flex items-center justify-between border-b border-slate-800/50 h-16">
-        <div className="flex items-center space-x-3 overflow-hidden">
-          <div className="bg-[#0F5FDC] p-2 rounded-xl flex-shrink-0 shadow-lg shadow-blue-500/30">
-            <ShieldAlert size={20} className="text-white" />
+    <aside className={`bg-ink border-r border-charcoal text-on-ink transition-all duration-300 ease-in-out flex flex-col h-full ${isExpanded ? 'w-64' : 'w-20'}`}>
+      {/* Brand Slot (Hidden in GlobalLayout's Header if preferred, but keeping here for identity) */}
+      <div className="p-md flex items-center justify-between border-b border-charcoal h-16">
+        <div className="flex items-center space-x-md overflow-hidden cursor-pointer" onClick={() => navigate('/')}>
+          <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center text-primary flex-shrink-0">
+            <ShieldCheck size={16} />
           </div>
-          {isExpanded && <span className="font-extrabold text-lg whitespace-nowrap tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">R&D Access</span>}
+          {isExpanded && <span className="font-bold text-base whitespace-nowrap tracking-tight">{t('sidebar.rd_hub')}</span>}
         </div>
-        <button onClick={toggleSidebar} className="text-slate-400 hover:text-white p-2 rounded-xl hover:bg-slate-800/50 transition-colors hidden md:block">
-          {isExpanded ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
+        <button onClick={toggleSidebar} className="text-graphite hover:text-on-ink p-xxs transition-colors hidden md:block">
+          {isExpanded ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
         </button>
       </div>
 
-      <nav className="flex-1 px-3 py-6 space-y-6 overflow-y-auto">
+      {/* Navigation Groups */}
+      <nav className="flex-1 px-md py-xxl space-y-xxl overflow-y-auto">
         {navGroups.map((group, groupIdx) => (
-          <div key={groupIdx} className="space-y-3">
-            {isExpanded && <h4 className="px-4 text-xs font-bold text-slate-500 uppercase tracking-widest">{group.category}</h4>}
-            <div className="space-y-2">
+          <div key={groupIdx} className="space-y-md">
+            {isExpanded && (
+              <h4 className="px-md text-[10px] font-bold text-graphite uppercase tracking-[0.1em]">
+                {group.category}
+              </h4>
+            )}
+            <div className="space-y-xxs">
               {group.items.map((item) => (
                 <NavLink
                   key={item.path}
                   to={item.path}
                   className={({ isActive }) =>
-                    `flex items-center space-x-4 px-4 py-3.5 rounded-xl transition-all ${
+                    `flex items-center space-x-md px-md py-sm rounded-md transition-all ${
                       isActive 
-                        ? 'bg-[#0F5FDC] text-white shadow-lg shadow-blue-500/20 font-bold' 
-                        : 'text-slate-400 hover:bg-slate-900 hover:text-white font-semibold'
+                        ? 'bg-primary text-white font-bold' 
+                        : 'text-steel hover:bg-ink-soft hover:text-on-ink'
                     }`
                   }
                 >
-                  <item.icon size={22} className="flex-shrink-0" />
-                  {isExpanded && <span className="whitespace-nowrap text-base">{item.label}</span>}
+                  <item.icon size={18} className="flex-shrink-0" />
+                  {isExpanded && <span className="whitespace-nowrap text-caption-md">{item.label}</span>}
                 </NavLink>
               ))}
             </div>
@@ -117,13 +127,14 @@ const Sidebar = ({ isExpanded, toggleSidebar }) => {
         ))}
       </nav>
 
-      <div className="p-4 border-t border-slate-800/50">
+      {/* User Actions */}
+      <div className="p-md border-t border-charcoal">
         <button 
           onClick={logout}
-          className="flex items-center space-x-4 text-red-400 hover:text-red-300 hover:bg-red-500/10 w-full px-4 py-3.5 rounded-xl transition-colors font-bold text-base"
+          className="flex items-center space-x-md text-bloom-coral hover:bg-bloom-wine/20 w-full px-md py-sm rounded-md transition-colors text-caption-md font-bold"
         >
-          <LogOut size={22} className="flex-shrink-0" />
-          {isExpanded && <span>Đăng Xuất</span>}
+          <LogOut size={18} className="flex-shrink-0" />
+          {isExpanded && <span>{t('common.logout')}</span>}
         </button>
       </div>
     </aside>

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Html5Qrcode } from 'html5-qrcode';
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 
 const QRScanner = ({ onScanSuccess, actionText = "Đang quét mã QR..." }) => {
   const qrCodeRef = useRef(null);
@@ -17,7 +17,8 @@ const QRScanner = ({ onScanSuccess, actionText = "Đang quét mã QR..." }) => {
 
     const config = { 
       fps: 15, 
-      aspectRatio: 1.0
+      aspectRatio: 1.0,
+      formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ]
     };
 
     const scanningLock = { locked: false, lastText: '' };
@@ -71,9 +72,9 @@ const QRScanner = ({ onScanSuccess, actionText = "Đang quét mã QR..." }) => {
   }, []);
 
   return (
-    <div className="w-full max-w-md mx-auto overflow-hidden">
+    <div className="w-[400px] mx-auto overflow-hidden">
       <div className="relative">
-        <div id="qr-reader" className="w-full bg-[#030712] rounded-none overflow-hidden aspect-square border-2 border-cyan-500/30 shadow-2xl"></div>
+        <div id="qr-reader" className="w-[400px] h-[400px] bg-[#030712] rounded-2xl overflow-hidden border-2 border-cyan-500/30 shadow-2xl"></div>
         
         {/* Overlay Decoration */}
         <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
@@ -89,7 +90,7 @@ const QRScanner = ({ onScanSuccess, actionText = "Đang quét mã QR..." }) => {
       </div>
       
       {error && (
-        <div className="mt-4 p-3 bg-red-500/10 border border-red-500/50 text-red-500 text-sm rounded-none text-center">
+        <div className="mt-4 p-3 bg-red-500/10 border border-red-500/50 text-red-500 text-sm rounded-2xl text-center">
           {error}
         </div>
       )}

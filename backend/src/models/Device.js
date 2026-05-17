@@ -2,7 +2,7 @@ const pool = require('../config/database');
 
 class Device {
   static async findById(id) {
-    const result = await pool.query('SELECT * FROM devices WHERE id = $1', [id]);
+    const result = await pool.query('SELECT * FROM devices WHERE device_id = $1', [id]);
     return result.rows[0];
   }
 
@@ -17,12 +17,14 @@ class Device {
   }
 
   static async create(deviceData) {
-    const { owner_id, device_type, brand, model, serial_number, mac_address, description, status, device_photo } = deviceData;
-    const finalStatus = status || 'pending';
+    const { owner_id, device_type, brand, model_name, serial_number, image_url, qr_code_url, status, registered_via, approved_by } = deviceData;
+    const finalStatus = status || 'approved';
+    const approvedAt = (finalStatus === 'approved') ? 'NOW()' : 'NULL';
+    
     const result = await pool.query(
-      `INSERT INTO devices (owner_id, device_type, brand, model, serial_number, mac_address, description, status, device_photo) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
-      [owner_id, device_type, brand, model, serial_number, mac_address, description, finalStatus, device_photo]
+      `INSERT INTO devices (owner_id, device_type, brand, model_name, serial_number, image_url, qr_code_url, status, registered_via, approved_by, approved_at) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, ${approvedAt}) RETURNING *`,
+      [owner_id, device_type, brand, model_name, serial_number, image_url, qr_code_url, finalStatus, registered_via || 'web', approved_by]
     );
     return result.rows[0];
   }
@@ -57,15 +59,16 @@ class Device {
     }
 
     values.push(id);
-    const query = `UPDATE devices SET ${fields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = $${paramCount} RETURNING *`;
+    const query = `UPDATE devices SET ${fields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE device_id = $${paramCount} RETURNING *`;
     const result = await pool.query(query, values);
     return result.rows[0];
   }
 
   static async delete(id) {
-    const result = await pool.query('DELETE FROM devices WHERE id = $1 RETURNING *', [id]);
+    const result = await pool.query('DELETE FROM devices WHERE device_id = $1 RETURNING *', [id]);
     return result.rows[0];
   }
 }
 
 module.exports = Device;
+

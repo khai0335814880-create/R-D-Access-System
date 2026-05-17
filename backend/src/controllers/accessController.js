@@ -1,3 +1,5 @@
+const Session = require('../models/Session');
+const SessionDevice = require('../models/SessionDevice');
 const AccessLog = require('../models/AccessLog');
 const Device = require('../models/Device');
 const User = require('../models/User');
@@ -5,105 +7,203 @@ const { logActivity } = require('../utils/helpers');
 
 exports.checkIn = async (req, res) => {
   try {
-    const { device_ids, entry_photo } = req.body;
+    const { device_ids, face_image_url, entry_photo, auth_method, ip_address, force_close_old } = req.body;
+    const final_face_image = face_image_url || entry_photo;
 
-    // Check if user already has active check-in
-    const activeLog = await AccessLog.findActiveByUser(req.user.id);
-    if (activeLog) {
-      return res.status(400).json({ message: 'User already checked in' });
+    // Fetch full user for broadcasting (includes avatar_url)
+    const fullUser = await User.findById(req.user.id);
+
+    // Check if user already has active session
+    const activeSession = await Session.findActiveByUser(req.user.id);
+    if (activeSession) {
+      // Determine if session is from a previous day
+      const checkInDate = new Date(activeSession.check_in_at);
+      const now = new Date();
+      
+      const isPreviousDay = checkInDate.getFullYear() < now.getFullYear() ||
+                            checkInDate.getMonth() < now.getMonth() ||
+                            checkInDate.getDate() < now.getDate();
+
+      if (isPreviousDay) {
+        if (!force_close_old) {
+          return res.status(409).json({ 
+            requires_force_close: true, 
+            message: 'Bạn đã quên check-out ngày hôm qua, bạn muốn đóng phiên cũ và check-in mới không?',
+            session_id: activeSession.session_id
+          });
+        } else {
+          // Force close the old session
+          await Session.forceClose(activeSession.session_id, req.user.id, 'Hệ thống tự động đóng do quên check-out qua ngày');
+          
+          await AccessLog.create({
+            event_type: 'forgotten_checkout_resolved',
+            user_id: req.user.id,
+            session_id: activeSession.session_id,
+            result: 'success',
+            ip_address: ip_address || req.ip
+          });
+          
+          await logActivity(req.user.id, 'forgotten_checkout_resolved', 'Tự động đóng phiên cũ bị quên check-out qua ngày', { session_id: activeSession.session_id });
+        }
+      } else {
+        return res.status(400).json({ message: 'Bạn đang trong phòng (Session đã tồn tại)' });
+      }
     }
 
-    // Create access log
-    const log = await AccessLog.create({
+    // 1. Create Session
+    const session = await Session.create({
       user_id: req.user.id,
-      device_ids: device_ids || [],
-      status: 'checked_in',
-      entry_photo: entry_photo || null
+      face_image_url: final_face_image || null,
+      auth_method: auth_method || 'qr_scan',
+      notes: ''
     });
+
+    // 2. Link Devices
+    if (device_ids && device_ids.length > 0) {
+      for (const device_id of device_ids) {
+        await SessionDevice.create({
+          session_id: session.session_id,
+          device_id: device_id,
+          scan_status: 'matched'
+        });
+      }
+    }
+
+    // 3. Log Event
+    await AccessLog.create({
+      event_type: 'check_in',
+      user_id: req.user.id,
+      session_id: session.session_id,
+      auth_method: auth_method || 'qr_scan',
+      result: 'success',
+      ip_address: ip_address || req.ip
+    });
+
+    await logActivity(req.user.id, 'check_in', `Người dùng thực hiện Check-in vào cơ sở`, { session_id: session.session_id, device_count: device_ids?.length || 0 });
 
     res.status(201).json({
-      message: 'Check-in successful',
-      log,
+      message: 'Check-in thành công',
+      session,
     });
 
-    // Log check-in
-    await logActivity(req.user.id, 'check_in', `User checked in with ${device_ids?.length || 0} devices`, { device_ids });
-    
     // Broadcast real-time update
     req.io.emit('occupancy_update');
-    req.io.emit('activity_update', {
+
+    const broadcastData = {
       type: 'check_in',
-      user: req.user.full_name
-    });
+      user: fullUser?.full_name || req.user.username,
+      avatar_url: fullUser?.avatar_url,
+      device: `CHECKED-IN (${device_ids?.length || 0} devices)`,
+      image_url: final_face_image,
+      status: 'valid',
+      time: new Date().toISOString()
+    };
+
+    req.io.emit('activity_update', broadcastData);
+    req.io.emit('kiosk_scan_update', { ...broadcastData, image_url: null });
   } catch (error) {
-    res.status(500).json({ message: 'Check-in failed', error: error.message });
+    res.status(500).json({ message: 'Check-in thất bại', error: error.message });
   }
 };
 
 exports.checkOut = async (req, res) => {
   try {
-    const activeLog = await AccessLog.findActiveByUser(req.user.id);
-    if (!activeLog) {
-      return res.status(400).json({ message: 'User is not checked in' });
+    const { notes, ip_address, exit_photo } = req.body;
+    // Fetch full user for broadcasting (includes avatar_url)
+    const fullUser = await User.findById(req.user.id);
+
+    const activeSession = await Session.findActiveByUser(req.user.id);
+    if (!activeSession) {
+      return res.status(400).json({ message: 'Bạn đang không ở trong phòng' });
     }
 
-    const log = await AccessLog.checkOut(activeLog.id);
-    res.json({ message: 'Check-out successful', log });
+    // 1. Update Session
+    const session = await Session.checkOut(activeSession.session_id, notes, exit_photo);
 
-    // Log check-out
-    await logActivity(req.user.id, 'check_out', `User checked out`);
-    
+    // 2. Log Event
+    await AccessLog.create({
+      event_type: 'check_out',
+      user_id: req.user.id,
+      session_id: session.session_id,
+      result: 'success',
+      ip_address: ip_address || req.ip
+    });
+
+    await logActivity(req.user.id, 'check_out', `Người dùng thực hiện Check-out khỏi cơ sở`, { session_id: session.session_id });
+
+    res.json({ message: 'Check-out thành công', session });
+
     // Broadcast real-time update
     req.io.emit('occupancy_update');
-    req.io.emit('activity_update', {
+    
+    const broadcastData = {
       type: 'check_out',
-      user: req.user.full_name
-    });
+      user: fullUser?.full_name || req.user.username,
+      avatar_url: fullUser?.avatar_url,
+      device: 'CHECKED-OUT (Facility Exit)',
+      image_url: exit_photo,
+      status: 'checkout',
+      time: new Date().toISOString()
+    };
+
+    req.io.emit('activity_update', broadcastData);
+    req.io.emit('kiosk_scan_update', { ...broadcastData, image_url: null });
   } catch (error) {
-    res.status(500).json({ message: 'Check-out failed', error: error.message });
+    res.status(500).json({ message: 'Check-out thất bại', error: error.message });
   }
 };
 
 exports.getCurrentStatus = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
-    const activeLog = await AccessLog.findActiveByUser(req.user.id);
+    const activeSession = await Session.findActiveByUser(req.user.id);
 
-    if (!activeLog) {
+    if (!activeSession) {
       return res.json({
         status: 'checked_out',
         user,
-        log: null,
+        session: null,
       });
     }
 
-    // Get device details
-    const devices = activeLog.device_ids
-      ? await Promise.all(
-          activeLog.device_ids.map(id => Device.findById(id))
-        )
-      : [];
+    // Check if session is from a previous day
+    const checkInDate = new Date(activeSession.check_in_at);
+    const now = new Date();
+    const isPreviousDay = checkInDate.getFullYear() < now.getFullYear() ||
+                          checkInDate.getMonth() < now.getMonth() ||
+                          checkInDate.getDate() < now.getDate();
+
+    if (isPreviousDay) {
+      return res.json({
+        status: 'overdue_session',
+        message: 'Bạn đã quên check-out ngày hôm qua, bạn muốn đóng phiên cũ và check-in mới không?',
+        user,
+        session: activeSession,
+      });
+    }
+
+    // Get device details from session_devices
+    const devices = await SessionDevice.findBySession(activeSession.session_id);
 
     res.json({
       status: 'checked_in',
       user,
-      log: activeLog,
+      session: activeSession,
       devices,
     });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch status', error: error.message });
+    res.status(500).json({ message: 'Lấy trạng thái thất bại', error: error.message });
   }
 };
 
 // Dashboard / Monitoring endpoints
 exports.getRecentActivity = async (req, res) => {
   try {
-    // Only security staff can view recent activity
     if (req.user.role !== 'security' && req.user.role !== 'manager' && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Forbidden: Unauthorized access' });
     }
 
-    const limit = req.query.limit || 50;
+    const limit = parseInt(req.query.limit) || 50;
     const activity = await AccessLog.getRecentActivity(limit);
 
     res.json({
@@ -111,37 +211,33 @@ exports.getRecentActivity = async (req, res) => {
       count: activity.length,
     });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch activity', error: error.message });
+    res.status(500).json({ message: 'Lấy nhật ký hoạt động thất bại', error: error.message });
   }
 };
 
 exports.getCurrentOccupancy = async (req, res) => {
   try {
-    // Only security staff can view occupancy
     if (req.user.role !== 'security' && req.user.role !== 'manager' && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Forbidden: Unauthorized access' });
     }
 
-    const logs = await AccessLog.findAll({ status: 'checked_in' });
+    const sessions = await Session.findAll({ status: 'in' });
 
     res.json({
-      occupancy: logs.length,
-      logs,
+      occupancy: sessions.length,
+      sessions,
     });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch occupancy', error: error.message });
+    res.status(500).json({ message: 'Lấy số lượng người hiện tại thất bại', error: error.message });
   }
 };
-
-const pool = require('../config/database');
 
 exports.getAccessHistory = async (req, res) => {
   try {
     const { user_id, limit } = req.query;
 
-    // Users can only view their own history, managers and security can view all
     let query_user_id = req.user.id;
-    if (req.user.role === 'manager' || req.user.role === 'security') {
+    if (req.user.role === 'manager' || req.user.role === 'security' || req.user.role === 'admin') {
       query_user_id = user_id || req.user.id;
     }
 
@@ -152,38 +248,31 @@ exports.getAccessHistory = async (req, res) => {
       count: history.length,
     });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch access history', error: error.message });
+    res.status(500).json({ message: 'Lấy lịch sử truy cập thất bại', error: error.message });
   }
 };
 
 exports.getPersonalStats = async (req, res) => {
   try {
     const userId = req.user.id;
+    const pool = require('../config/database');
     
-    // Get total stays count
     const totalStaysResult = await pool.query(
-      'SELECT COUNT(*) FROM access_logs WHERE user_id = $1 AND status = \'checked_out\'',
+      'SELECT COUNT(*) FROM sessions WHERE user_id = $1 AND status != \'in\'',
       [userId]
     );
 
-    // Get stay durations
     const durationsResult = await pool.query(
       `SELECT 
-        EXTRACT(EPOCH FROM (check_out_time - check_in_time))/3600 as duration_hours,
-        check_in_time
-       FROM access_logs 
-       WHERE user_id = $1 AND status = 'checked_out'
-       ORDER BY check_in_time DESC`,
+        EXTRACT(EPOCH FROM (check_out_at - check_in_at))/3600 as duration_hours,
+        check_in_at
+       FROM sessions 
+       WHERE user_id = $1 AND status != 'in'
+       ORDER BY check_in_at DESC`,
       [userId]
     );
 
-    // Get recent activity
-    const recentActivity = await pool.query(
-      `SELECT * FROM access_logs 
-       WHERE user_id = $1 
-       ORDER BY created_at DESC LIMIT 10`,
-      [userId]
-    );
+    const recentActivity = await AccessLog.findAll({ user_id: userId });
 
     const durations = durationsResult.rows.map(r => r.duration_hours);
     const avgDuration = durations.length > 0 ? (durations.reduce((a, b) => a + b, 0) / durations.length).toFixed(2) : 0;
@@ -191,11 +280,11 @@ exports.getPersonalStats = async (req, res) => {
     res.json({
       totalStays: parseInt(totalStaysResult.rows[0].count),
       avgDurationHours: parseFloat(avgDuration),
-      durations: durationsResult.rows.slice(0, 7), // Last 7 stays for chart
-      recentActivity: recentActivity.rows
+      durations: durationsResult.rows.slice(0, 7),
+      recentActivity: recentActivity.slice(0, 10)
     });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch personal stats', error: error.message });
+    res.status(500).json({ message: 'Lấy thống kê cá nhân thất bại', error: error.message });
   }
 };
 
@@ -203,59 +292,103 @@ exports.verifyCheckIn = async (req, res) => {
   try {
     const { identifier } = req.params;
     let user = null;
-    let device = null;
+    let scannedDevice = null;
+    const pool = require('../config/database');
 
-    // Determine what we're scanning
+    // 1. Try to parse as JSON (Device QR)
     try {
       if (identifier.startsWith('{')) {
         const qrData = JSON.parse(identifier);
         if (qrData.deviceId) {
-          device = await Device.findById(qrData.deviceId);
-          if (device) {
-            user = await User.findById(device.owner_id);
+          scannedDevice = await Device.findById(qrData.deviceId);
+          if (scannedDevice) {
+            user = await User.findById(scannedDevice.owner_id);
           }
         }
       }
-    } catch (e) {
-      // Not JSON, treat as username or employee_id
-    }
+    } catch (e) {}
 
+    // 2. Try to find user by code/username/qr
     if (!user) {
-      // Try to find by username
       user = await User.findByUsername(identifier);
       if (!user) {
-        // Try to find by employee_id or qr_code_id
-        const userById = await pool.query(
-          'SELECT * FROM users WHERE employee_id = $1 OR qr_code_id = $1',
-          [identifier]
+        user = await User.findByEmployeeCode(identifier);
+      }
+      if (!user) {
+        // Search by qr_code_url (contains the identifier) or direct match
+        const userByQR = await pool.query(
+          'SELECT * FROM users WHERE qr_code_url LIKE $1 OR employee_code = $2',
+          [`%${identifier}%`, identifier]
         );
-        user = userById.rows[0];
+        user = userByQR.rows[0];
       }
     }
 
     if (!user) {
-      return res.status(404).json({ message: 'User or device not found in system' });
+      return res.status(404).json({ message: 'Không tìm thấy người dùng hoặc thiết bị' });
     }
 
-    // Find active check-in session
-    const activeLog = await AccessLog.findActiveByUser(user.id);
-    
-    // Get all approved devices for this user
-    const userDevices = await Device.findByOwner(user.id);
+    const activeSession = await Session.findActiveByUser(user.user_id);
+    const userDevices = await Device.findByOwner(user.user_id);
     const approvedDevices = userDevices.filter(d => d.status === 'approved');
 
     res.json({
       user,
-      session: activeLog || null,
+      session: activeSession || null,
       approvedDevices,
       verificationResult: {
-        isInside: !!activeLog,
-        deviceMatch: device ? approvedDevices.some(d => d.id === device.id) : null,
-        scannedDevice: device
+        isInside: !!activeSession,
+        deviceMatch: scannedDevice ? approvedDevices.some(d => d.device_id === scannedDevice.device_id) : null,
+        scannedDevice
       }
     });
 
   } catch (error) {
-    res.status(500).json({ message: 'Verification failed', error: error.message });
+    res.status(500).json({ message: 'Xác thực thất bại', error: error.message });
   }
 };
+
+exports.getAdminSessions = async (req, res) => {
+  try {
+    const { status } = req.query;
+    const sessions = await Session.findAll({ status });
+    
+    // Add overdue flag
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const processedSessions = sessions.map(s => ({
+      ...s,
+      is_overdue: s.status === 'in' && new Date(s.check_in_at) < startOfToday
+    }));
+
+    res.json({
+      sessions: processedSessions,
+      count: processedSessions.length
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Lấy danh sách phiên thất bại', error: error.message });
+  }
+};
+
+exports.forceCloseSession = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { notes } = req.body;
+
+    const session = await Session.forceClose(id, req.user.id, notes || 'Forced close by Admin');
+
+    await logActivity(req.user.id, 'force_close_session', `Quản trị viên đã đóng phiên thủ công cho người dùng`, { session_id: id });
+
+    res.json({
+      message: 'Đã đóng phiên thành công',
+      session
+    });
+
+    // Broadcast update
+    req.io.emit('occupancy_update');
+  } catch (error) {
+    res.status(500).json({ message: 'Đóng phiên thất bại', error: error.message });
+  }
+};
+

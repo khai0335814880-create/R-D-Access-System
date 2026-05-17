@@ -102,4 +102,6 @@ export const useAuthStore = create((set, get) => ({
     sessionStorage.setItem('user', JSON.stringify(user));
     set({ user });
   },
+
+  clearError: () => set({ error: null }),
 }));

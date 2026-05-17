@@ -1,267 +1,133 @@
-# R&D Room Access Management System
+# 🛡️ R&D Access Management System (Innovation Nexus)
 
-Hệ thống quản lý ra vào phòng R&D được tái cấu trúc dựa trên nền tảng Web tập trung, giúp tự động hóa dòng chảy dữ liệu giữa kỹ sư, cấp quản lý và bộ phận an ninh.
+Hệ thống quản lý ra vào khu vực R&D (Nghiên cứu & Phát triển) độ phân giải cao, được thiết kế theo tiêu chuẩn an ninh cấp doanh nghiệp (Enterprise-grade Security). Hệ thống tự động hóa toàn bộ quy trình từ khai báo tài sản, phê duyệt, đến kiểm soát ra vào theo thời gian thực tại các trạm Kiosk.
 
-## 🎯 Tổng quan Hệ thống
+![R&D Access Banner](https://via.placeholder.com/1200x400/0F2C59/FFFFFF?text=R%26D+Access+Management+System)
 
-Hệ thống được thiết kế theo hai giai đoạn tương tác mật thiết:
+## ✨ Tính năng nổi bật
 
-### **Giai đoạn 1: Thiết lập và Phê duyệt danh mục tài sản**
+### 1. Trạm Kiosk An ninh (Lối vào R&D)
+- **Xác thực Đa lớp (MFA):** Hỗ trợ quét mã QR thẻ nhân viên hoặc Đăng nhập thủ công qua tài khoản Active Directory.
+- **Quét Mã vạch/QR Tốc độ cao:** Tích hợp engine `html5-qrcode` độc quyền được tinh chỉnh chỉ nhận diện mã QR (tránh nhiễu loạn môi trường), cho tốc độ quét cực nhanh.
+- **Xác thực Tài sản (Asset Verification):** Quét mã QR thiết bị cá nhân để đối chiếu với danh sách đã được phê duyệt.
+- **Đăng ký Nhanh (Quick Register):** Tích hợp Camera độ nét cao (`react-webcam`) cho phép chụp ảnh thiết bị lạ và gửi yêu cầu phê duyệt tức thì đến bảo vệ.
+- **Giao diện Cao cấp:** Thiết kế UI/UX hiện đại với hiệu ứng Glassmorphism, Animations mượt mà và Hỗ trợ Đa ngôn ngữ (Anh/Việt) tự động.
 
-- Kỹ sư truy cập Web thông qua mạng nội bộ
-- Khai báo các thiết bị cá nhân dự kiến mang vào khu vực R&D
-- Thông tin: loại thiết bị, dòng máy, số serial vật lý được số hóa
-- Hệ thống tự động thông báo đến quản lý dự án
-- Quản lý thẩm định và phê duyệt trực tuyến
+### 2. Trung tâm Giám sát Thời gian thực (Dashboard Bảo vệ)
+- **Live Kiosk Monitor:** Giám sát luồng người ra vào Kiosk theo thời gian thực thông qua kết nối `Socket.IO` tốc độ cao.
+- **Cảnh báo Thông minh:** Khi có thiết bị lạ xâm nhập, hệ thống tự động đẩy cảnh báo thẻ đỏ kèm hình ảnh chân dung (hỗ trợ truyền tải băng thông lớn lên đến 100MB) và phát âm thanh báo động.
+- **Thống kê Lưu lượng:** Biểu đồ lượng người ra vào và số lượng thiết bị đang nằm trong khu vực R&D.
 
-### **Giai đoạn 2: Vận hành kiểm soát tại cửa phòng**
-
-- Hệ thống vận hành trên thiết bị máy tính bảng cố định tại lối vào
-- Kỹ sư quét mã QR trên thẻ nhân viên
-- Hệ thống xác thực danh tính và quyền truy cập
-- Hiển thị danh sách thiết bị được phê duyệt
-- Kỹ sư lựa chọn thiết bị qua quét QR để đối soát tự động
-- Ghi log dấu thời gian và thông tin tài sản
-- Dashboard giám sát thời gian thực cho nhân viên bảo vệ
-
-## 📋 Yêu cầu Hệ thống
-
-### Backend
-- Node.js v16+
-- PostgreSQL v12+
-- npm hoặc yarn
-
-### Frontend
-- Modern web browser (Chrome, Firefox, Safari, Edge)
-- Node.js v16+ (for development)
-
-## 🚀 Cài đặt
-
-### 1. Clone Repository
-```bash
-cd Web_Kientap
-```
-
-### 2. Setup Backend
-
-```bash
-cd backend
-cp .env.example .env
-# Update .env with your configuration
-npm install
-npm run migrate  # Create database tables
-npm run seed     # Insert sample data
-npm run dev      # Start development server
-```
-
-### 3. Setup Frontend
-
-```bash
-cd frontend
-npm install
-npm start        # Start development server
-```
-
-## 📁 Cấu trúc Dự án
-
-```
-Web_Kientap/
-├── backend/
-│   ├── src/
-│   │   ├── config/          # Database & config
-│   │   ├── database/        # Schema, migration, seed
-│   │   ├── controllers/     # Business logic
-│   │   ├── middleware/      # Auth, validation
-│   │   ├── models/          # Database models
-│   │   ├── routes/          # API routes
-│   │   ├── utils/           # Helper functions
-│   │   └── index.js         # Main server file
-│   ├── package.json
-│   └── .env.example
-│
-└── frontend/
-    ├── src/
-    │   ├── components/      # Reusable components
-    │   ├── pages/          # Page components
-    │   ├── services/       # API services
-    │   ├── store/          # Zustand state management
-    │   ├── styles/         # CSS & Tailwind
-    │   ├── utils/          # Helper functions
-    │   ├── App.jsx
-    │   └── index.jsx
-    ├── public/
-    ├── package.json
-    └── .env
-```
-
-## 🔐 Chứng thực
-
-Hệ thống sử dụng JWT (JSON Web Tokens) để xác thực:
-
-### Demo Accounts
-
-| Role | Username | Password |
-|------|----------|----------|
-| Manager | project_manager | manager123 |
-| Engineer | engineer1 | engineer123 |
-| Security | admin | admin123 |
-
-## 📝 API Endpoints
-
-### Authentication
-- `POST /api/auth/register` - Đăng ký tài khoản
-- `POST /api/auth/login` - Đăng nhập
-- `GET /api/auth/profile` - Lấy thông tin người dùng
-- `PUT /api/auth/profile` - Cập nhật thông tin
-
-### Devices (Phase 1)
-- `POST /api/devices` - Tạo thiết bị mới
-- `GET /api/devices/my-devices` - Lấy thiết bị của tôi
-- `GET /api/devices/approved` - Lấy thiết bị đã phê duyệt
-- `PUT /api/devices/:id` - Cập nhật thiết bị
-- `DELETE /api/devices/:id` - Xóa thiết bị
-
-### Device Requests (Manager)
-- `GET /api/devices/requests/pending` - Lấy danh sách chờ phê duyệt
-- `POST /api/devices/requests/:id/approve` - Phê duyệt
-- `POST /api/devices/requests/:id/reject` - Từ chối
-
-### Access Control (Phase 2)
-- `POST /api/access/check-in` - Check-in vào phòng
-- `POST /api/access/check-out` - Check-out khỏi phòng
-- `GET /api/access/status` - Lấy trạng thái hiện tại
-- `GET /api/access/history` - Lịch sử truy cập
-
-### Dashboard (Security)
-- `GET /api/access/dashboard/activity` - Hoạt động gần đây
-- `GET /api/access/dashboard/occupancy` - Số người hiện tại
-
-## 🗄️ Database Schema
-
-### Users Table
-- id, username, email, password_hash
-- full_name, role (engineer/manager/security)
-- department, employee_id, qr_code_id
-- status, created_at, updated_at
-
-### Devices Table
-- id, owner_id, device_type, brand, model
-- serial_number, mac_address, description
-- status (pending/approved/rejected), approval_date
-- created_at, updated_at
-
-### Device Requests Table
-- id, device_id, requester_id, approver_id
-- status, comments, requested_at, approved_at
-
-### Access Logs Table
-- id, user_id, device_ids (array)
-- check_in_time, check_out_time
-- status, location, created_at
-
-### Activity Logs Table
-- id, user_id, activity_type
-- description, metadata (JSON)
-- created_at
-
-## 🛠️ Công Nghệ Sử Dụng
-
-### Backend
-- **Framework**: Express.js
-- **Database**: PostgreSQL
-- **Authentication**: JWT (jsonwebtoken)
-- **Hashing**: bcryptjs
-- **Validation**: express-validator
-- **Real-time**: Socket.io
-
-### Frontend
-- **Library**: React 18
-- **Routing**: React Router v6
-- **State Management**: Zustand
-- **Styling**: Tailwind CSS
-- **HTTP Client**: Axios
-- **UI Components**: Custom components
-- **QR Scanning**: html5-qrcode
-- **Icons**: React Icons
-
-## 📚 Feature Roadmap
-
-### Phase 1 (Current - MVP)
-- [x] User authentication & authorization
-- [x] Device registration form
-- [x] Manager approval workflow
-- [x] Check-in/out system
-- [x] Basic dashboard
-
-### Phase 2 (Enhancement)
-- [ ] QR code generation & scanning
-- [ ] Real-time WebSocket updates
-- [ ] Advanced reporting & analytics
-- [ ] Email notifications
-- [ ] Two-factor authentication (2FA)
-- [ ] Mobile app (React Native)
-- [ ] Integration with existing LDAP/AD
-
-### Phase 3 (Advanced)
-- [ ] AI-based anomaly detection
-- [ ] Automated compliance reports
-- [ ] Multi-location support
-- [ ] API for third-party integrations
-- [ ] Audit trail and compliance logs
-
-## 🔍 Testing
-
-### Backend Testing
-```bash
-cd backend
-npm test
-```
-
-### Frontend Testing
-```bash
-cd frontend
-npm test
-```
-
-## 📦 Deployment
-
-### Backend Deployment
-```bash
-cd backend
-npm install --production
-npm run build
-npm start
-```
-
-### Frontend Deployment
-```bash
-cd frontend
-npm run build
-# Deploy the 'build' folder to your hosting
-```
-
-## 🤝 Contributing
-
-1. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-2. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-3. Push to the branch (`git push origin feature/AmazingFeature`)
-4. Open a Pull Request
-
-## 📄 License
-
-This project is proprietary and confidential.
-
-## 📞 Support
-
-For issues and questions, please contact the development team.
-
-## 🎓 Documentation
-
-See individual README files:
-- [Backend Documentation](./backend/README.md)
-- [Frontend Documentation](./frontend/README.md)
+### 3. Cổng thông tin Cán bộ / Kỹ sư
+- Khai báo thiết bị, laptop cá nhân.
+- Xem lịch sử ra vào và phiên làm việc hiện tại.
+- Quản lý mã QR cá nhân và thiết bị.
 
 ---
 
-**Last Updated**: April 2026
-**Version**: 1.0.0
+## 🛠️ Ngăn xếp Công nghệ (Tech Stack)
+
+### 💻 Frontend
+- **Core:** React 18, Vite
+- **State Management:** Zustand
+- **Styling:** Tailwind CSS (với bộ màu tuỳ chỉnh chuyên nghiệp `bloom`, `ink`, `paper`)
+- **Quốc tế hóa (i18n):** `react-i18next` (Anh / Việt)
+- **Tương tác phần cứng:** `html5-qrcode` (Quét mã), `react-webcam` (Chụp ảnh)
+- **Giao tiếp:** Axios, Socket.IO-Client
+
+### ⚙️ Backend
+- **Core:** Node.js, Express.js
+- **Database:** PostgreSQL v12+
+- **Real-time Engine:** Socket.IO (Cấu hình `maxHttpBufferSize` 100MB cho truyền tải hình ảnh HD)
+- **Authentication:** JWT (JSON Web Tokens), bcryptjs
+- **Logging & Security:** Helmet, CORS, Custom Access Logs
+
+---
+
+## 🚀 Hướng dẫn Cài đặt & Vận hành
+
+### Yêu cầu môi trường
+- Node.js v18+
+- PostgreSQL v12+
+- Trình duyệt hiện đại có cấp quyền truy cập Camera.
+
+### 1. Cài đặt Backend
+```bash
+cd backend
+
+# Copy file cấu hình môi trường và chỉnh sửa thông tin Database
+cp .env.example .env
+
+# Cài đặt thư viện
+npm install
+
+# Khởi tạo CSDL và Data mẫu
+npm run migrate
+npm run seed
+
+# Khởi động Server (Port mặc định: 5000)
+npm run dev
+```
+
+### 2. Cài đặt Frontend
+```bash
+cd frontend
+
+# Cài đặt thư viện
+npm install
+
+# Khởi động Frontend Server (Port mặc định: 3000)
+npm start
+```
+
+---
+
+## 🔐 Tài khoản Demo
+
+| Vai trò (Role) | Username | Password |
+|------|----------|----------|
+| **Kỹ sư / Nhân viên** | `engineer1` | `engineer123` |
+| **Bảo vệ / An ninh** | `admin` | `admin123` |
+| **Quản lý** | `project_manager` | `manager123` |
+
+---
+
+## 📂 Cấu trúc Thư mục Chính
+
+```text
+RD_Access/
+├── backend/
+│   ├── src/
+│   │   ├── config/          # Kết nối DB, Cấu hình môi trường
+│   │   ├── controllers/     # Xử lý Logic nghiệp vụ (Access, Auth, Devices)
+│   │   ├── database/        # Schema PostgreSQL (V2)
+│   │   ├── routes/          # Express Routes
+│   │   └── index.js         # Khởi tạo Express & Socket.IO
+│   └── package.json
+│
+└── frontend/
+    ├── src/
+    │   ├── components/      # UI Components (QRScanner, LanguageSwitcher...)
+    │   ├── locales/         # JSON Đa ngôn ngữ (en.json, vi.json)
+    │   ├── pages/           # Kiosk, Dashboard, Login...
+    │   ├── services/        # Gọi API Backend
+    │   ├── store/           # Zustand Stores (authStore, languageStore)
+    │   └── styles/          # Cấu hình TailwindCSS Token
+    └── package.json
+```
+
+---
+
+## 🚧 Lưu ý Vận hành (Troubleshooting)
+
+1. **Không nhận Camera trên Kiosk:**
+   - Trình duyệt sẽ tự động chặn Camera nếu chạy qua `http://` thay vì `https://` (ngoại trừ `localhost`). Đảm bảo hệ thống được deploy với chứng chỉ SSL/HTTPS.
+   
+2. **Cảnh báo lỗi QR liên tục (False Alarms):**
+   - Đảm bảo `components/QRScanner.jsx` luôn giữ cấu hình `formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE]`. Việc gỡ bỏ dòng này có thể khiến Camera nhận diện nhầm các họa tiết sọc ngang/dọc trong môi trường thành mã vạch 1D, dẫn đến rác dữ liệu.
+
+3. **Mất tín hiệu Cảnh báo Real-time:**
+   - Đảm bảo Socket.io trên Backend (`index.js`) giữ nguyên giá trị `maxHttpBufferSize: 1e8`. Hình ảnh truyền tải từ Kiosk dưới dạng Base64 thường lớn hơn 1MB, nếu không có cấu hình này, Server sẽ tự động ngắt kết nối.
+
+---
+*Phát triển bởi Đội ngũ R&D Node - 2026*

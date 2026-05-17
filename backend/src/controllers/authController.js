@@ -7,7 +7,7 @@ const qrcode = require('qrcode');
 // Generate JWT token
 const generateToken = (user) => {
   return jwt.sign(
-    { id: user.id, username: user.username, role: user.role },
+    { id: user.user_id, username: user.username, role: user.role },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRE || '7d' }
   );
@@ -15,7 +15,7 @@ const generateToken = (user) => {
 
 exports.register = async (req, res) => {
   try {
-    const { username, email, password, full_name, role, department, employee_id } = req.body;
+    const { username, email, password, full_name, role, department, employee_code } = req.body;
 
     // Check if user exists
     const existingUser = await User.findByUsername(username);
@@ -34,7 +34,7 @@ exports.register = async (req, res) => {
       full_name,
       role: role || 'engineer',
       department,
-      employee_id,
+      employee_code,
     });
 
     // Generate token
@@ -43,7 +43,7 @@ exports.register = async (req, res) => {
     res.status(201).json({
       message: 'User registered successfully',
       user: {
-        id: user.id,
+        id: user.user_id,
         username: user.username,
         email: user.email,
         role: user.role,
@@ -52,7 +52,7 @@ exports.register = async (req, res) => {
     });
 
     // Log the registration
-    await logActivity(user.id, 'user_registration', `New user registered: ${user.username}`);
+    await logActivity(user.user_id, 'user_registration', `New user registered: ${user.username}`);
   } catch (error) {
     res.status(500).json({ message: 'Registration failed', error: error.message });
   }
@@ -63,14 +63,19 @@ exports.login = async (req, res) => {
     const { username, password } = req.body;
 
     // Find user
+    console.log(`[LoginDebug] Attempting login for username: "${username}"`);
     const user = await User.findByUsername(username);
     if (!user) {
+      console.log(`[LoginDebug] User "${username}" not found in database`);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
+
+    console.log(`[LoginDebug] User found: ${user.username}, status: ${user.status}`);
 
     // Check password
     const validPassword = await bcrypt.compare(password, user.password_hash);
     if (!validPassword) {
+      console.log(`[LoginDebug] Password mismatch for user: ${username}`);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
@@ -85,18 +90,19 @@ exports.login = async (req, res) => {
     res.json({
       message: 'Login successful',
       user: {
-        id: user.id,
+        id: user.user_id,
         username: user.username,
         email: user.email,
         role: user.role,
         full_name: user.full_name,
         avatar_url: user.avatar_url,
+        employee_code: user.employee_code,
       },
       token,
     });
 
     // Log the login
-    await logActivity(user.id, 'user_login', `User logged in: ${user.username}`);
+    await logActivity(user.user_id, 'user_login', `User logged in: ${user.username}`);
   } catch (error) {
     res.status(500).json({ message: 'Login failed', error: error.message });
   }
@@ -111,13 +117,13 @@ exports.getProfile = async (req, res) => {
 
     res.json({
       user: {
-        id: user.id,
+        id: user.user_id,
         username: user.username,
         email: user.email,
         role: user.role,
         full_name: user.full_name,
         department: user.department,
-        employee_id: user.employee_id,
+        employee_code: user.employee_code,
         avatar_url: user.avatar_url,
       },
     });
@@ -141,7 +147,7 @@ exports.updateProfile = async (req, res) => {
     res.json({
       message: 'Profile updated successfully',
       user: {
-        id: user.id,
+        id: user.user_id,
         username: user.username,
         email: user.email,
         role: user.role,
@@ -186,7 +192,7 @@ exports.qrLogin = async (req, res) => {
     res.json({
       message: 'QR Login successful',
       user: {
-        id: user.id,
+        id: user.user_id,
         username: user.username,
         email: user.email,
         role: user.role,
@@ -207,7 +213,7 @@ exports.getMyQR = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    const qrData = generateQRData(user.id, user.username);
+    const qrData = generateQRData(user.user_id, user.username);
     const qrImage = await qrcode.toDataURL(qrData);
     
     res.json({

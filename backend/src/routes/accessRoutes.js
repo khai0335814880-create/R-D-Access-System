@@ -25,4 +25,8 @@ router.get('/personal-stats', accessController.getPersonalStats);
 // Security Verification
 router.get('/verify/:identifier', requireRole(['security', 'manager', 'admin']), accessController.verifyCheckIn);
 
+// Admin Session Management
+router.get('/admin/sessions', requireRole(['admin']), accessController.getAdminSessions);
+router.post('/admin/sessions/:id/force-close', requireRole(['admin']), accessController.forceCloseSession);
+
 module.exports = router;

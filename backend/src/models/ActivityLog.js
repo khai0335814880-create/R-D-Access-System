@@ -14,9 +14,9 @@ class ActivityLog {
 
   static async findRecent(limit = 50) {
     const query = `
-      SELECT al.*, u.full_name, u.username, u.role
+      SELECT al.*, u.full_name, u.username, u.role, u.avatar_url
       FROM activity_logs al
-      LEFT JOIN users u ON al.user_id = u.id
+      LEFT JOIN users u ON al.user_id = u.user_id
       ORDER BY al.created_at DESC
       LIMIT $1
     `;

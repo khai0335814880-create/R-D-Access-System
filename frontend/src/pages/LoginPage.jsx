@@ -1,248 +1,233 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-import Alert from '../components/Alert';
-import QRScanner from '../components/QRScanner';
-import { Shield, User, Lock, Eye, EyeOff, ArrowRight, BarChart3, Users, QrCode } from 'lucide-react';
+import { useLanguageStore } from '../store/languageStore';
+import { Shield, Lock, Eye, EyeOff, Users, Lightbulb, TrendingUp, User } from 'lucide-react';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 export const LoginPage = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [showScanner, setShowScanner] = useState(false);
+  const { t } = useLanguageStore();
+  const [formData, setFormData] = useState({ username: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
-  const { login, qrLogin } = useAuthStore();
+  const [rememberMe, setRememberMe] = useState(false);
+  const { login, error, isLoading, clearError, user } = useAuthStore();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+    return () => {
+      clearError();
+    };
+  }, [user, navigate, clearError]);
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    try {
-      await login({ username, password });
+    const success = await login(formData);
+    if (success) {
       navigate('/dashboard');
-    } catch (err) {
-      setError(err.response?.data?.message || 'Login failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleQRSuccess = async (decodedText) => {
-    setLoading(true);
-    setError('');
-    setShowScanner(false);
-    try {
-      await qrLogin(decodedText);
-      navigate('/check-in');
-    } catch (err) {
-      setError(err.response?.data?.message || 'QR Login failed');
-      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#0b0f1a] text-white flex items-center justify-center p-4 md:p-8 font-['Inter',sans-serif] relative overflow-hidden">
-      {/* Container - Big Frame with full background image */}
-      <div
-        className="container w-full max-w-[1250px] min-h-[750px] rounded-[2.5rem] border border-[#0052ff]/40 overflow-hidden shadow-[0_0_40px_rgba(0,82,255,0.2)] relative z-10 m-4 flex flex-col md:flex-row bg-cover bg-center transition-all duration-500"
-        style={{ backgroundImage: "url('/z7768508596307_2f26c1319aa107c0e04dee79be275bdf.jpg')" }}
-      >
-        {/* Left Content overlaid */}
-        <div className="left hidden md:flex md:w-[55%] flex-col justify-between p-12 relative z-10">
-          <div className="flex items-center space-x-2 opacity-0">
-            <Shield size={28} className="text-[#0052ff]" />
-            <span className="text-sm font-black tracking-widest text-white/90">SECURE NODE</span>
-          </div>
+    <div className="min-h-screen flex flex-col font-['Inter',sans-serif] text-slate-900 relative bg-[#F4F7FB] overflow-hidden">
+      {/* Background Gradient */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white via-[#e8f0fe] to-[#f4e8fe] opacity-60"></div>
+        <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-[#cae0ff] blur-[120px] rounded-full opacity-40"></div>
+        <div className="absolute bottom-0 right-0 w-[50%] h-[50%] bg-[#e3d1ff] blur-[150px] rounded-full opacity-30"></div>
+      </div>
 
-          <div className="left-content mt-auto mb-4 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
-            <h1 className="text-4xl font-black text-white tracking-tight leading-none uppercase">
-              R&D Access System
-            </h1>
-            <p className="text-[#0052ff] font-bold text-xs uppercase tracking-wider mt-2">
-              HCLTech & ANZ Strategic Portal
-            </p>
-            <p className="text-white/60 text-xs mt-4 max-w-sm leading-relaxed">
-              Secure access to research, innovation and strategic collaboration platform.
-            </p>
-
-            {/* Quick Feature Grid */}
-            <div className="grid grid-cols-3 gap-4 mt-10 pt-6 border-t border-white/20 max-w-lg">
-              <div className="flex flex-col">
-                <Shield size={20} className="text-[#0052ff] mb-2" />
-                <span className="text-[11px] font-bold text-white">Secure Access</span>
-                <span className="text-[10px] text-white/60 mt-1 leading-tight">Enterprise grade protection</span>
-              </div>
-              <div className="flex flex-col">
-                <BarChart3 size={20} className="text-[#0052ff] mb-2" />
-                <span className="text-[11px] font-bold text-white">Real-time Insights</span>
-                <span className="text-[10px] text-white/60 mt-1 leading-tight">Data-driven decisions</span>
-              </div>
-              <div className="flex flex-col">
-                <Users size={20} className="text-[#0052ff] mb-2" />
-                <span className="text-[11px] font-bold text-white">Strategic Collaboration</span>
-                <span className="text-[10px] text-white/60 mt-1 leading-tight">Connect. Innovate. Succeed.</span>
-              </div>
-            </div>
+      {/* Navigation Header */}
+      <header className="w-full px-8 py-5 flex items-center justify-between bg-white/60 backdrop-blur-md sticky top-0 z-50">
+        <div className="flex items-center gap-12">
+          <div className="flex items-center gap-2 cursor-pointer font-bold text-xl tracking-tight text-[#0F2C59]" onClick={() => navigate('/')}>
+             <span>HCLTech</span>
+             <span className="text-slate-300 font-light px-1">×</span>
+             <span>ANZ</span>
           </div>
+          <nav className="hidden lg:flex items-center gap-8 text-[13px] font-semibold text-slate-500">
+            {['Overview', 'Research Domain', 'Innovation Labs', 'Projects'].map((link) => (
+              <a key={link} className="hover:text-[#0F2C59] transition-colors" href="#">
+                {link}
+              </a>
+            ))}
+          </nav>
         </div>
+        <div className="flex items-center gap-4">
+          <button className="w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-600 hover:text-[#0F2C59] transition-colors flex items-center justify-center shadow-sm">
+            <Shield size={18} strokeWidth={2} />
+          </button>
+          <LanguageSwitcher />
+        </div>
+      </header>
 
-        {/* Right Side - Floating Glassmorphic Login Card (rgba 7,19,41,0.7) */}
-        <div className="right w-full md:w-[45%] flex items-center justify-center p-6 md:p-8 relative z-10">
-          {/* Diffused deep blue glow spreading behind the login box */}
-          <div className="absolute w-[85%] h-[80%] bg-[#0052ff]/40 rounded-full blur-[100px] pointer-events-none z-0 animate-pulse"></div>
+      {/* Strategic Banner */}
+      <div className="w-full bg-[#0F2C59] text-white py-2 relative z-20 flex justify-center items-center gap-2 text-[11px] font-bold tracking-widest uppercase">
+        <Shield size={14} className="text-blue-300" />
+        Strategic R&D Partnership
+      </div>
 
-          <div
-            className="login-box w-full max-w-md rounded-[2rem] border border-[#0052ff]/40 p-10 shadow-[0_0_30px_rgba(0,82,255,0.3)] relative z-10 transition-all duration-300 hover:shadow-[0_0_50px_rgba(0,82,255,0.5)] hover:border-[#0052ff]/60 animate-fade-in"
-            style={{ backgroundColor: 'rgba(7, 19, 41, 0.7)' }}
-          >
+      <main className="flex-grow flex items-center justify-center relative px-6 py-12 z-10">
+        <div className="max-w-[1400px] w-full grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          
+          {/* Left Content */}
+          <section className="hidden lg:flex flex-col justify-center space-y-12 pr-12">
+            <div className="space-y-6">
+              <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-[#e3eefa] text-[#0F2C59] text-[11px] font-bold tracking-widest uppercase shadow-sm">
+                Strategic R&D Partnership
+              </div>
+              <h1 className="text-[4rem] font-bold tracking-tight leading-[1.1] text-[#0F2C59]">
+                HCLTech <span className="text-slate-300 font-light">×</span> ANZ <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1b4cc4] to-[#7127FF]">Innovation Nexus</span>
+              </h1>
+              <div className="h-1.5 w-24 bg-gradient-to-r from-[#1b4cc4] to-[#7127FF] rounded-full"></div>
+              <p className="text-[1.1rem] text-slate-500 max-w-lg leading-relaxed font-medium">
+                A strategic collaboration between HCLTech and ANZ to co-create the future of digital banking through research, innovation and technology.
+              </p>
+            </div>
 
-            {/* Header Form */}
-            <div className="text-center mb-8">
-              <div className="flex items-center justify-center mx-auto mb-4">
-                <div className="relative flex items-center justify-center w-14 h-14 text-[#0052ff]">
-                  <Shield size={50} className="absolute opacity-20 animate-pulse" />
-                  <Shield size={40} className="absolute" />
-                  <Lock size={16} className="relative z-10 text-white" />
+            {/* Feature Grid */}
+            <div className="grid grid-cols-2 gap-x-8 gap-y-6 pt-4">
+              {[
+                { icon: Users, label: "JOINT R&D", sub: "INITIATIVES" },
+                { icon: Lightbulb, label: "FUTURE-READY", sub: "SOLUTIONS" },
+                { icon: Shield, label: "SECURE", sub: "INFRASTRUCTURE" },
+                { icon: TrendingUp, label: "SCALABLE", sub: "IMPACT" }
+              ].map((item, idx) => (
+                <div key={idx} className="flex items-center gap-4 p-4 bg-white/50 backdrop-blur-sm rounded-[24px] shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] border border-white">
+                  <div className="w-12 h-12 flex items-center justify-center bg-white rounded-full text-[#1b4cc4] shadow-sm">
+                    <item.icon size={22} strokeWidth={2} />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-[#0F2C59] text-sm leading-tight">{item.label}</h4>
+                    <p className="text-[10px] text-slate-400 font-semibold tracking-wider">{item.sub}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Login Card */}
+          <section className="w-full max-w-[480px] mx-auto lg:ml-auto flex flex-col justify-center">
+            <div className="bg-white rounded-[40px] p-10 md:p-14 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] relative overflow-hidden border border-white/50">
+              <div className="text-center mb-10 space-y-6">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-[20px] bg-white border-2 border-[#e8f0fe] shadow-sm mx-auto">
+                  <Lock size={28} strokeWidth={1.5} className="text-[#0F2C59]" />
+                </div>
+                <div className="space-y-2">
+                  <h2 className="text-[1.75rem] font-bold text-[#0F2C59] leading-tight">Welcome to <br /> Innovation Nexus</h2>
+                  <p className="text-slate-500 text-sm font-medium">Sign in to access the strategic collaboration platform</p>
                 </div>
               </div>
-              <h2 className="text-2xl font-normal text-white tracking-tight uppercase">
-                R&D Access System
-              </h2>
-              <p className="text-xs text-white/70 font-normal uppercase tracking-widest mt-1.5">
-                HCLTECH & ANZ STRATEGIC PORTAL
-              </p>
-              <div className="w-10 h-0.5 bg-[#0052ff] rounded-full mx-auto mt-4"></div>
-            </div>
-            {error && (
-              <div className="mb-6">
-                <Alert message={error} type="error" onClose={() => setError('')} duration={5000} />
-              </div>
-            )}
 
-            {!showScanner ? (
-              <form onSubmit={handleSubmit} className="space-y-5">
-                {/* Username Input */}
-                <div className="input-group">
-                  <label className="block text-sm font-normal text-white/70 uppercase tracking-wider mb-2">
-                    Username
+              {error && (
+                <div className="mb-6 p-4 rounded-[16px] bg-red-50 border border-red-100 text-red-600 text-sm font-semibold text-center">
+                  {error}
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Email / Username */}
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest pl-2" htmlFor="username">
+                    EMAIL / USERNAME
                   </label>
                   <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <User size={18} className="text-white/40 group-focus-within:text-[#0052ff] transition-colors" />
+                    <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-slate-400">
+                      <User size={20} strokeWidth={2} />
                     </div>
                     <input
+                      className="block w-full pl-14 pr-5 py-4 bg-[#f4f7fb] border border-transparent rounded-[16px] text-[#0F2C59] font-semibold text-sm placeholder-slate-400 focus:bg-white focus:border-[#cae0ff] focus:ring-4 focus:ring-[#cae0ff]/30 outline-none transition-all"
+                      id="username"
+                      name="username"
                       type="text"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      className="w-full pl-12 pr-4 py-3 bg-[#0b0f1a]/50 border border-[#0052ff]/20 focus:border-[#0052ff]/60 rounded-xl outline-none text-white transition font-medium text-sm placeholder-white/20 shadow-inner focus:ring-1 focus:ring-[#0052ff]/30"
-                      placeholder="security"
+                      placeholder="Enter your username"
+                      value={formData.username}
+                      onChange={handleChange}
                       required
                     />
                   </div>
                 </div>
 
-                {/* Password Input */}
-                <div className="input-group">
-                  <label className="block text-sm font-normal text-white/70 uppercase tracking-wider mb-2">
-                    Password
+                {/* Password */}
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest pl-2" htmlFor="password">
+                    PASSWORD
                   </label>
                   <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <Lock size={18} className="text-white/40 group-focus-within:text-[#0052ff] transition-colors" />
+                    <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-slate-400">
+                      <Lock size={20} strokeWidth={2} />
                     </div>
                     <input
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-12 pr-12 py-3 bg-[#0b0f1a]/50 border border-[#0052ff]/20 focus:border-[#0052ff]/60 rounded-xl outline-none text-white transition font-medium text-sm placeholder-white/20 shadow-inner focus:ring-1 focus:ring-[#0052ff]/30"
-                      placeholder="••••••••••"
+                      className="block w-full pl-14 pr-12 py-4 bg-[#f4f7fb] border border-transparent rounded-[16px] text-[#0F2C59] font-semibold text-sm placeholder-slate-400 focus:bg-white focus:border-[#cae0ff] focus:ring-4 focus:ring-[#cae0ff]/30 outline-none transition-all"
+                      id="password"
+                      name="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={formData.password}
+                      onChange={handleChange}
                       required
                     />
                     <button
+                      className="absolute inset-y-0 right-0 pr-5 flex items-center text-slate-400 hover:text-[#0F2C59] transition-colors"
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-4 flex items-center text-white/40 hover:text-[#0052ff]"
                     >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      {showPassword ? <EyeOff size={18} strokeWidth={2} /> : <Eye size={18} strokeWidth={2} />}
                     </button>
                   </div>
                 </div>
 
-                {/* Login Button */}
+                {/* Options */}
+                <div className="flex items-center justify-between px-2 pt-2">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <div className="relative flex items-center justify-center">
+                      <input
+                        type="checkbox"
+                        className="peer appearance-none w-4 h-4 rounded-[4px] border-2 border-slate-300 checked:bg-[#0F2C59] checked:border-[#0F2C59] transition-all cursor-pointer"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                      />
+                      <svg className="absolute w-3 h-3 text-white pointer-events-none opacity-0 peer-checked:opacity-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                    </div>
+                    <span className="text-sm font-medium text-slate-500">Remember me</span>
+                  </label>
+                  <a href="#" className="text-sm font-bold text-[#1b4cc4] hover:underline">
+                    Forgot password?
+                  </a>
+                </div>
+
+                {/* Submit */}
                 <button
+                  className="w-full bg-[#0F2C59] text-white font-bold py-4 rounded-[16px] shadow-md hover:bg-[#153b75] hover:shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 mt-4 disabled:opacity-70 disabled:cursor-not-allowed"
                   type="submit"
-                  disabled={loading}
-                  className="w-full bg-gradient-to-r from-[#0072ff] to-[#00c6ff] text-white py-3.5 rounded-xl font-bold hover:opacity-95 disabled:opacity-50 transition shadow-lg shadow-[#0072ff]/30 flex items-center justify-center gap-2 text-xs uppercase tracking-widest active:scale-[0.98]"
+                  disabled={isLoading}
                 >
-                  {loading ? 'Processing authentication...' : (
-                    <>
-                      LOGIN TO PLATFORM
-                      <ArrowRight size={16} className="ml-1" />
-                    </>
-                  )}
+                  {isLoading ? 'Signing In...' : 'Sign In'}
                 </button>
               </form>
-            ) : (
-              <div className="bg-[#0b0f1a]/40 p-4 rounded-2xl border border-[#00c6ff]/20 shadow-inner">
-                <QRScanner
-                  onScanSuccess={handleQRSuccess}
-                  actionText="Scan your Employee Badge"
-                />
-              </div>
-            )}
 
-            {/* OR Divider */}
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-white/10"></div>
-              </div>
-              <div className="relative flex justify-center text-[9px]">
-                <span className="px-4 bg-transparent text-white/40 uppercase font-black tracking-widest">OR</span>
-              </div>
-            </div>
-
-            {/* QR Mode Toggle */}
-            <button
-              type="button"
-              onClick={() => setShowScanner(!showScanner)}
-              className="w-full bg-transparent hover:bg-[#00c6ff]/10 text-[#00c6ff] hover:text-white py-3 rounded-xl font-bold transition border border-[#00c6ff]/30 hover:border-[#00c6ff] flex items-center justify-center gap-2 text-xs uppercase tracking-widest active:scale-[0.98]"
-            >
-              <QrCode size={16} />
-              {showScanner ? "Login with Credentials" : "Scan Employee Badge (QR Mode)"}
-            </button>
-
-            {/* Demo Credentials */}
-            <div className="mt-8 text-left text-[11px] text-white/40 border-t border-white/10 pt-6">
-              <p className="font-bold uppercase tracking-wider mb-4 text-[#00c6ff] text-center text-xs">DEMO CREDENTIALS</p>
-              <div className="flex flex-col space-y-2.5 max-w-xs mx-auto">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-white/60">Admin:</span>
-                  <span className="font-mono bg-[#0b0f1a]/40 px-3 py-1 rounded-lg border border-[#00c6ff]/20 text-white/90 text-[10px] flex items-center gap-1.5 shadow-sm">
-                    <User size={12} className="text-[#00c6ff]" /> admin / admin123
-                  </span>
+              <div className="mt-10 flex flex-col items-center gap-4">
+                <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  <Shield size={14} className="text-[#1b4cc4]" />
+                  Secure access for authorized users only
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-white/60">Engineer:</span>
-                  <span className="font-mono bg-[#0b0f1a]/40 px-3 py-1 rounded-lg border border-[#00c6ff]/20 text-white/90 text-[10px] flex items-center gap-1.5 shadow-sm">
-                    <User size={12} className="text-[#00c6ff]" /> engineer1 / engineer123
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-white/60">Security:</span>
-                  <span className="font-mono bg-[#0b0f1a]/40 px-3 py-1 rounded-lg border border-[#00c6ff]/20 text-white/90 text-[10px] flex items-center gap-1.5 shadow-sm">
-                    <User size={12} className="text-[#00c6ff]" /> security / security123
-                  </span>
+                <div className="text-[9px] font-semibold text-slate-300 uppercase tracking-widest">
+                  Authorized access only
                 </div>
               </div>
             </div>
-
-          </div>
+          </section>
         </div>
-
-      </div>
+      </main>
     </div>
   );
 };

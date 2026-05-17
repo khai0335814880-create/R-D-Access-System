@@ -19,6 +19,7 @@ import SupportPage from './pages/SupportPage';
 import SettingsPage from './pages/SettingsPage';
 import ProfilePage from './pages/ProfilePage';
 import RegisterDevicePage from './pages/RegisterDevicePage';
+import SessionManagementPage from './pages/SessionManagementPage';
 import './styles/index.css';
 
 // Redirect theo role
@@ -93,6 +94,7 @@ function App() {
             <Route path="/activity" element={<ProtectedRoute requiredRole={['security', 'manager', 'admin']}><GlobalLayout><ActivityLogsPage /></GlobalLayout></ProtectedRoute>} />
             <Route path="/verify" element={<ProtectedRoute requiredRole={['security', 'manager', 'admin']}><GlobalLayout><SecurityVerifyPage /></GlobalLayout></ProtectedRoute>} />
             <Route path="/audit" element={<ProtectedRoute requiredRole={['security', 'manager', 'admin']}><GlobalLayout><ActivityLogsPage /></GlobalLayout></ProtectedRoute>} />
+            <Route path="/sessions" element={<ProtectedRoute requiredRole={['admin']}><GlobalLayout><SessionManagementPage /></GlobalLayout></ProtectedRoute>} />
             
             {/* Global Utility Routes */}
             <Route path="/rules" element={<ProtectedRoute requiredRole={['engineer', 'security', 'manager', 'admin']}><GlobalLayout><RulesPage /></GlobalLayout></ProtectedRoute>} />

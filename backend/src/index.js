@@ -22,7 +22,8 @@ const io = new Server(server, {
     origin: true, // Allow all origins in local dev to ensure real-time works
     methods: ['GET', 'POST'],
     credentials: true,
-  }
+  },
+  maxHttpBufferSize: 1e8 // 100 MB to allow large Base64 images
 });
 
 // Middleware
@@ -30,7 +31,7 @@ app.use(helmet({
   crossOriginResourcePolicy: false, // For local dev images if any
 }));
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: true, // Allow all origins in local dev to prevent CORS issues
   credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));

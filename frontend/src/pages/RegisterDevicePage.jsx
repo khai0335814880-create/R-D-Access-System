@@ -1,16 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDeviceStore } from '../store/deviceStore';
-import { Laptop, Smartphone, MonitorSmartphone, Camera, RotateCcw, CheckCircle, ShieldAlert, AlertTriangle } from 'lucide-react';
+import { useLanguageStore } from '../store/languageStore';
+import { Laptop, Smartphone, MonitorSmartphone, Camera, RotateCcw, CheckCircle, ShieldAlert, AlertTriangle, ChevronRight, Info } from 'lucide-react';
 
 const RegisterDevicePage = () => {
+    const { t } = useLanguageStore();
     const { createDevice, isLoading } = useDeviceStore();
     const navigate = useNavigate();
     
     const [formData, setFormData] = useState({
         device_type: 'Laptop',
         brand: '',
-        model: '',
+        model_name: '',
         serial_number: '',
         mac_address: '',
         description: '',
@@ -45,7 +47,7 @@ const RegisterDevicePage = () => {
             }
         } catch (err) {
             console.error("Camera access denied", err);
-            setError("Không thể truy cập Camera. Vui lòng kiểm tra quyền ứng dụng.");
+            setError("Optical sensor access denied. Verify system permissions.");
             setCameraActive(false);
         }
     };
@@ -90,7 +92,7 @@ const RegisterDevicePage = () => {
         e.preventDefault();
         if (!committed) return;
         if (!photo) {
-            setError('Bạn bắt buộc phải chụp ảnh thiết bị để đăng ký!');
+            setError('Physical asset verification (photo) is mandatory for registration.');
             return;
         }
         setError('');
@@ -98,40 +100,41 @@ const RegisterDevicePage = () => {
         try {
             await createDevice({
                 ...formData,
-                device_photo: photo // Send base64 photo
+                image_url: photo 
             });
             setSuccess(true);
             setTimeout(() => {
                 navigate('/devices');
             }, 2500);
         } catch (err) {
-            setError(err.response?.data?.message || 'Đăng ký thiết bị thất bại.');
+            setError(err.response?.data?.message || 'Provisioning failed. Contact system administrator.');
         }
     };
 
     return (
-        <div className="px-6 md:px-12 py-8 w-full relative z-10 animate-in fade-in duration-700">
-            <div className="mb-10 text-center md:text-left">
-                <h1 className="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight flex items-center justify-center md:justify-start">
-                    <Camera className="text-[#0F5FDC] dark:text-blue-400 mr-3" size={36} /> Đăng Ký Thiết Bị
-                </h1>
-                <p className="text-slate-500 dark:text-slate-400 mt-2">Khai báo thiết bị cá nhân để mang vào khu vực R&D.</p>
+        <div className="min-h-screen bg-canvas text-ink font-sans p-xl">
+            {/* Header Section */}
+            <div className="mb-xxl">
+            <h1 className="text-display-md tracking-tight mb-xs">{t('devices.asset_enrollment')}</h1>
+            <p className="text-body-md text-charcoal">{t('devices.declare_assets_desc')}</p>
             </div>
 
             {success ? (
-                <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 p-8 rounded-2xl flex flex-col items-center justify-center text-center shadow-xl backdrop-blur-xl animate-in zoom-in duration-500">
-                    <CheckCircle size={64} className="mb-4 animate-bounce" />
-                    <h2 className="text-2xl font-bold mb-2">Đăng Ký Thành Công!</h2>
-                    <p className="text-sm font-medium text-slate-400">Thiết bị đã được phê duyệt tự động. Đang chuyển hướng về danh sách...</p>
+                <div className="max-w-2xl mx-auto bg-paper border border-fog p-xxl rounded-xl shadow-floating text-center animate-in zoom-in duration-500">
+                    <div className="w-20 h-20 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto mb-xl border border-green-100 shadow-sm">
+                        <CheckCircle size={40} className="animate-bounce" />
+                    </div>
+                    <h2 className="text-display-xs text-ink mb-md">{t('devices.enrollment_confirmed')}</h2>
+                    <p className="text-body-md text-charcoal mb-xl">{t('devices.asset_provisioned_desc')}</p>
                 </div>
             ) : (
-                <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    {/* Device Photo Section */}
-                    <div className="md:col-span-1 flex flex-col items-center space-y-6">
-                        <div className="w-full flex flex-col items-center">
-                            <div className="w-full aspect-[4/3] bg-slate-100 dark:bg-slate-900/50 backdrop-blur-xl border border-slate-200 dark:border-slate-800/50 rounded-2xl overflow-hidden flex flex-col items-center justify-center relative shadow-xl group">
+                <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-xl">
+                    {/* Visual Evidence Section */}
+                    <div className="lg:col-span-1 space-y-xl">
+                        <div className="bg-paper border border-fog p-md rounded-xl shadow-soft-lift flex flex-col items-center">
+                            <div className="w-full aspect-[4/3] bg-cloud border border-fog rounded-md overflow-hidden relative shadow-sm group">
                                 {photo ? (
-                                    <img src={photo} alt="Captured device" className="w-full h-full object-cover animate-in fade-in" />
+                                    <img src={photo} alt="Captured asset" className="w-full h-full object-cover animate-in fade-in" />
                                 ) : cameraActive ? (
                                     <video ref={(el) => {
                                         videoRef.current = el;
@@ -140,187 +143,170 @@ const RegisterDevicePage = () => {
                                         }
                                     }} autoPlay playsInline className="w-full h-full object-cover" />
                                 ) : (
-                                    <div className="text-center p-6">
-                                        <Camera size={48} className="text-slate-400 dark:text-slate-600 mx-auto mb-3" />
-                                        <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Chưa có ảnh thiết bị</p>
+                                    <div className="h-full flex flex-col items-center justify-center text-charcoal opacity-40">
+                                        <Camera size={48} className="mb-md" />
+                                        <p className="text-caption-bold uppercase tracking-widest text-center px-xl">{t('devices.optical_sensor_standby')}</p>
                                     </div>
                                 )}
                                 <canvas ref={canvasRef} className="hidden" />
                             </div>
 
-                            {error && <p className="text-xs font-bold text-red-500 mt-2 text-center">{error}</p>}
+                            {error && (
+                                <div className="mt-md p-sm bg-red-50 border border-red-100 rounded text-red-600 text-caption-bold flex items-center gap-xs">
+                                    <ShieldAlert size={14} /> {error}
+                                </div>
+                            )}
 
-                            <div className="mt-4 w-full">
+                            <div className="mt-xl w-full">
                                 {photo ? (
                                     <button
                                         type="button"
                                         onClick={retakePhoto}
-                                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl border border-slate-700/50 transition-all text-sm"
+                                        className="w-full flex items-center justify-center gap-xs px-md py-sm bg-cloud text-ink font-bold rounded-md border border-fog hover:bg-fog transition-all text-caption-bold"
                                     >
-                                        <RotateCcw size={16} /> Chụp lại ảnh
+                                        <RotateCcw size={16} /> {t('devices.recalibrate_optic')}
                                     </button>
                                 ) : cameraActive ? (
                                     <button
                                         type="button"
                                         onClick={capturePhoto}
-                                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20 transition-all text-sm animate-pulse"
+                                        className="w-full flex items-center justify-center gap-xs px-md py-sm bg-primary text-on-ink font-bold rounded-md shadow-soft-lift hover:bg-primary-deep transition-all text-caption-bold animate-pulse"
                                     >
-                                        <Camera size={16} /> Bấm để Chụp
+                                        <Camera size={16} /> {t('devices.capture_photo')}
                                     </button>
                                 ) : (
                                     <button
                                         type="button"
                                         onClick={startCamera}
-                                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl border border-slate-700/50 transition-all text-sm"
+                                        className="w-full flex items-center justify-center gap-xs px-md py-sm bg-ink text-on-ink font-bold rounded-md border border-charcoal hover:bg-charcoal transition-all text-caption-bold"
                                     >
-                                        <Camera size={16} /> Chụp ảnh thiết bị
+                                        <Camera size={16} /> {t('devices.activate_sensor')}
                                     </button>
                                 )}
                             </div>
                         </div>
 
-                        {/* Workflow Stepper Widget */}
-                        <div className="w-full bg-white/80 dark:bg-slate-900/50 backdrop-blur-xl p-6 rounded-2xl border border-slate-200/60 dark:border-slate-800/50 shadow-xl">
-                            <h3 className="text-base font-bold text-slate-800 dark:text-white mb-4 uppercase tracking-wider">Quy Trình Phê Duyệt</h3>
-                            <div className="space-y-4">
-                                <div className="flex items-start gap-3">
-                                    <div className="w-6 h-6 bg-blue-500/10 text-[#0F5FDC] dark:text-blue-400 rounded-full flex items-center justify-center text-sm font-bold border border-blue-500/20 mt-0.5">1</div>
-                                    <div>
-                                        <p className="text-base font-bold text-slate-700 dark:text-slate-300">Khai báo thông tin</p>
-                                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 font-medium">Điền Model, Serial và chụp ảnh thực tế.</p>
+                        {/* Provisioning Sequence */}
+                        <div className="bg-paper border border-fog p-xl rounded-xl shadow-soft-lift">
+                            <h3 className="text-body-emphasis text-ink mb-xl uppercase tracking-widest flex items-center gap-xs">
+                                <Info size={16} className="text-primary" /> {t('devices.enrollment_sequence')}
+                            </h3>
+                            <div className="space-y-xl">
+                                {[
+                                    { step: 1, title: t('devices.identity_documentation'), desc: t('devices.identity_documentation_desc'), active: true },
+                                    { step: 2, title: t('devices.heuristic_validation'), desc: t('devices.heuristic_validation_desc'), active: false },
+                                    { step: 3, title: t('devices.token_initialization'), desc: t('devices.token_initialization_desc'), active: false }
+                                ].map((s) => (
+                                    <div key={s.step} className="flex gap-md relative">
+                                        {s.step !== 3 && <div className="absolute left-3 top-8 w-px h-10 bg-fog"></div>}
+                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold border shrink-0 ${
+                                            s.active ? 'bg-primary text-on-ink border-primary' : 'bg-cloud text-graphite border-fog'
+                                        }`}>{s.step}</div>
+                                        <div>
+                                            <p className={`text-caption-bold ${s.active ? 'text-ink' : 'text-graphite'}`}>{s.title}</p>
+                                            <p className="text-[11px] text-charcoal mt-xxs">{s.desc}</p>
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="flex items-start gap-3 border-l-2 border-slate-100 dark:border-slate-800 ml-3 pl-3 pb-2">
-                                    <div className="w-6 h-6 bg-slate-100 dark:bg-slate-800 text-slate-400 rounded-full flex items-center justify-center text-sm font-bold border border-slate-200 dark:border-slate-700 mt-0.5">2</div>
-                                    <div>
-                                        <p className="text-base font-bold text-slate-400 dark:text-slate-500">Hệ thống xét duyệt</p>
-                                        <p className="text-sm text-slate-500 dark:text-slate-500 mt-0.5 font-medium">Duyệt tự động hoặc Admin kiểm tra.</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-start gap-3">
-                                    <div className="w-6 h-6 bg-slate-100 dark:bg-slate-800 text-slate-400 rounded-full flex items-center justify-center text-sm font-bold border border-slate-200 dark:border-slate-700 mt-0.5">3</div>
-                                    <div>
-                                        <p className="text-base font-bold text-slate-400 dark:text-slate-500">Phát sinh QR Code</p>
-                                        <p className="text-sm text-slate-500 dark:text-slate-500 mt-0.5 font-medium">Dán mã định danh lên thiết bị.</p>
-                                    </div>
-                                </div>
+                                ))}
                             </div>
                         </div>
                     </div>
 
-                    {/* Device Form Details */}
-                    <div className="md:col-span-2 bg-white/80 dark:bg-slate-900/50 backdrop-blur-xl p-8 rounded-2xl shadow-xl border border-slate-200/60 dark:border-slate-800/50 flex flex-col justify-between">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label className="block text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Loại Thiết Bị <span className="text-red-500">*</span></label>
+                    {/* Specifications Section */}
+                    <div className="lg:col-span-2 bg-paper p-xl rounded-xl shadow-floating border border-fog flex flex-col justify-between">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-xl">
+                            <div className="space-y-xs">
+                                <label className="text-caption-bold uppercase text-ink flex items-center gap-xs">{t('devices.classification')} <span className="text-primary">*</span></label>
                                 <select
                                     name="device_type"
                                     value={formData.device_type}
                                     onChange={handleInputChange}
-                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/50 rounded-xl focus:ring-2 focus:ring-[#0F5FDC] outline-none transition text-slate-800 dark:text-white font-medium text-base"
+                                    className="w-full px-md py-sm bg-cloud border border-fog rounded-md focus:border-primary outline-none transition text-ink font-bold appearance-none cursor-pointer"
                                 >
-                                    <option value="Laptop">Laptop / Máy tính xách tay</option>
-                                    <option value="Phone">Điện thoại di động</option>
-                                    <option value="Tablet">Máy tính bảng</option>
-                                    <option value="Desktop">Desktop / PC</option>
-                                    <option value="Other">Khác</option>
+                                    <option value="Laptop">{t('devices.mobile_workstation')}</option>
+                                    <option value="Phone">{t('devices.telecommunications')}</option>
+                                    <option value="Tablet">{t('devices.slate_computer')}</option>
+                                    <option value="Desktop">{t('devices.static_terminal')}</option>
+                                    <option value="Other">{t('devices.custom_hardware')}</option>
                                 </select>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Thương Hiệu (Hãng) <span className="text-red-500">*</span></label>
+                            <div className="space-y-xs">
+                                <label className="text-caption-bold uppercase text-ink">{t('devices.manufacturer')} <span className="text-primary">*</span></label>
                                 <input
-                                    type="text"
-                                    name="brand"
-                                    value={formData.brand}
-                                    onChange={handleInputChange}
-                                    placeholder="VD: Apple, Dell, Samsung"
-                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/50 rounded-xl focus:ring-2 focus:ring-[#0F5FDC] outline-none transition text-slate-800 dark:text-white font-medium text-base"
-                                    required
+                                    type="text" name="brand" value={formData.brand} onChange={handleInputChange}
+                                    placeholder="e.g., Dell, Lenovo, Apple" required
+                                    className="w-full px-md py-sm bg-cloud border border-fog rounded-md focus:border-primary outline-none transition text-ink font-bold"
                                 />
                             </div>
 
-                            <div className="md:col-span-2">
-                                <label className="block text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Tên Dòng Máy (Model) <span className="text-red-500">*</span></label>
+                            <div className="md:col-span-2 space-y-xs">
+                                <label className="text-caption-bold uppercase text-ink">{t('devices.model_name')} <span className="text-primary">*</span></label>
                                 <input
-                                    type="text"
-                                    name="model"
-                                    value={formData.model}
-                                    onChange={handleInputChange}
-                                    placeholder="VD: MacBook Pro 14 M2 2023"
-                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/50 rounded-xl focus:ring-2 focus:ring-[#0F5FDC] outline-none transition text-slate-800 dark:text-white font-medium text-base"
-                                    required
+                                    type="text" name="model_name" value={formData.model_name} onChange={handleInputChange}
+                                    placeholder="e.g., Latitude 7440 / ThinkPad X1" required
+                                    className="w-full px-md py-sm bg-cloud border border-fog rounded-md focus:border-primary outline-none transition text-ink font-bold"
                                 />
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Số Serial Number <span className="text-red-500">*</span></label>
+                            <div className="space-y-xs">
+                                <label className="text-caption-bold uppercase text-ink">{t('devices.serial_number')} <span className="text-primary">*</span></label>
                                 <input
-                                    type="text"
-                                    name="serial_number"
-                                    value={formData.serial_number}
-                                    onChange={handleInputChange}
-                                    placeholder="Ghi dưới đáy máy / trong About"
-                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/50 rounded-xl focus:ring-2 focus:ring-[#0F5FDC] outline-none font-mono text-base uppercase text-slate-800 dark:text-white font-bold"
-                                    required
+                                    type="text" name="serial_number" value={formData.serial_number} onChange={handleInputChange}
+                                    placeholder="Located on asset chassis" required
+                                    className="w-full px-md py-sm bg-cloud border border-fog rounded-md focus:border-primary outline-none font-mono text-ink font-bold uppercase"
                                 />
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Địa chỉ MAC (Tùy chọn)</label>
+                            <div className="space-y-xs">
+                                <label className="text-caption-bold uppercase text-ink">{t('devices.mac_address')} ({t('common.optional')})</label>
                                 <input
-                                    type="text"
-                                    name="mac_address"
-                                    value={formData.mac_address}
-                                    onChange={handleInputChange}
-                                    placeholder="VD: 00:1A:2B:3C:4D:5E"
-                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/50 rounded-xl focus:ring-2 focus:ring-[#0F5FDC] outline-none font-mono text-base uppercase text-slate-800 dark:text-white"
+                                    type="text" name="mac_address" value={formData.mac_address} onChange={handleInputChange}
+                                    placeholder="00:00:00:00:00:00"
+                                    className="w-full px-md py-sm bg-cloud border border-fog rounded-md focus:border-primary outline-none font-mono text-ink font-bold uppercase"
                                 />
                             </div>
 
-                            <div className="md:col-span-2">
-                                <label className="block text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Ghi chú thêm</label>
+                            <div className="md:col-span-2 space-y-xs">
+                                <label className="text-caption-bold uppercase text-ink">{t('devices.notes')}</label>
                                 <textarea
-                                    name="description"
-                                    value={formData.description}
-                                    onChange={handleInputChange}
-                                    placeholder="Đặc điểm nhận dạng, màu sắc..."
+                                    name="description" value={formData.description} onChange={handleInputChange}
+                                    placeholder="Physical identification markers, modifications, etc."
                                     rows="2"
-                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/50 rounded-xl focus:ring-2 focus:ring-[#0F5FDC] outline-none resize-none text-slate-800 dark:text-white font-medium text-base"
+                                    className="w-full px-md py-sm bg-cloud border border-fog rounded-md focus:border-primary outline-none resize-none text-ink font-bold"
                                 ></textarea>
                             </div>
                             
-                            <div className="md:col-span-2 flex items-start gap-3 bg-red-500/5 p-4 rounded-xl border border-red-500/10">
+                            <div className="md:col-span-2 p-xl bg-primary/5 rounded-md border border-primary/10 flex gap-md">
                                 <input
-                                    type="checkbox"
-                                    id="commitment"
-                                    checked={committed}
+                                    type="checkbox" id="commitment" checked={committed}
                                     onChange={(e) => setCommitted(e.target.checked)}
-                                    className="mt-1 w-5 h-5 text-[#0F5FDC] bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 rounded focus:ring-[#0F5FDC] flex-shrink-0"
+                                    className="mt-xs w-5 h-5 accent-primary cursor-pointer shrink-0"
                                     required
                                 />
-                                <label htmlFor="commitment" className="text-sm font-bold text-slate-500 dark:text-slate-400 leading-relaxed cursor-pointer select-none">
-                                    <span className="text-red-500 flex items-center font-extrabold"><AlertTriangle size={14} className="mr-1" /> TÔI XÁC THỰC CAM KẾT:</span> Tôi cam kết chịu trách nhiệm bảo mật và tuân thủ tuyệt đối các quy định khi mang thiết bị này vào phòng R&D.
+                                <label htmlFor="commitment" className="text-caption-md text-charcoal leading-relaxed cursor-pointer select-none">
+                                    <span className="text-ink font-bold block mb-xxs flex items-center gap-xs"><AlertTriangle size={14} className="text-primary" /> {t('devices.commitment')}</span> 
+                                    {t('devices.commitment_text')}
                                 </label>
                             </div>
                         </div>
 
-                        <div className="mt-8 flex justify-end gap-4">
+                        <div className="mt-xxl flex justify-end gap-md">
                             <button
-                                type="button"
-                                onClick={() => navigate('/devices')}
-                                className="px-6 py-3 font-bold text-base text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded-xl transition-all"
+                                type="button" onClick={() => navigate('/devices')}
+                                className="px-xl py-sm font-bold text-caption-bold text-charcoal hover:bg-cloud rounded-md transition"
                             >
-                                Hủy Bỏ
+                                {t('devices.abandon_enrollment')}
                             </button>
                             <button
-                                type="submit"
-                                disabled={isLoading || !committed}
-                                className="bg-[#0F5FDC] hover:bg-blue-600 text-white px-8 py-3 rounded-xl font-bold transition shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center text-base"
+                                type="submit" disabled={isLoading || !committed}
+                                className="bg-primary hover:bg-primary-deep text-on-ink px-xxl py-sm rounded-md font-bold transition shadow-soft-lift disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-xs"
                             >
                                 {isLoading ? (
-                                    <><div className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full mr-2"></div> Đang Đăng Ký...</>
-                                ) : 'Xác Nhận Đăng Ký'}
+                                    <><div className="animate-spin w-4 h-4 border-2 border-on-ink/30 border-t-on-ink rounded-full"></div> {t('synchronizing')}</>
+                                ) : (
+                                    <>{t('devices.commit_provisioning')} <ChevronRight size={16} /></>
+                                )}
                             </button>
                         </div>
                     </div>

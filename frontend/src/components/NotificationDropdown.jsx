@@ -1,40 +1,44 @@
-import React, { useState, useEffect } from 'react';
-import { Bell, Info, CheckCircle, AlertTriangle, X, Terminal, Clock } from 'lucide-react';
-import { notificationService } from '../services/notificationService';
+import React, { useEffect } from 'react';
+import { Bell, Info, CheckCircle, AlertTriangle, X, Terminal, Clock, CheckCheck, ShieldAlert, Activity } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import { useNotificationStore } from '../store/notificationStore';
 
 const NotificationDropdown = ({ socket }) => {
     const { user } = useAuthStore();
-    const [notifications, setNotifications] = useState([]);
-    const [unreadCount, setUnreadCount] = useState(0);
-    const [isOpen, setIsOpen] = useState(false);
+    const { 
+        notifications, 
+        unreadCount, 
+        fetchNotifications, 
+        addNotification, 
+        markAsRead, 
+        markAllAsRead 
+    } = useNotificationStore();
+    const [isOpen, setIsOpen] = React.useState(false);
 
     useEffect(() => {
         fetchNotifications();
 
         if (socket) {
             socket.on('notification', (newNotif) => {
-                setNotifications(prev => [newNotif, ...prev]);
-                setUnreadCount(prev => prev + 1);
+                const formattedNotif = { ...newNotif, read: false };
+                addNotification(formattedNotif);
                 
-                // Play a subtle sound if it's an alert
-                if (newNotif.type === 'error' || newNotif.type === 'warning') {
+                if (newNotif.type === 'error' || newNotif.type === 'warning' || newNotif.type === 'success') {
                     const audio = new Audio('/alert.mp3');
-                    audio.play().catch(() => {}); // Browser might block autoplay
+                    audio.play().catch(() => {});
                 }
             });
 
-            // Specific event for security alerts
             socket.on('security_incident', (data) => {
                 const alertNotif = {
                     id: Date.now(),
-                    title: '🚨 CẢNH BÁO AN NINH',
-                    message: data.message || 'Phát hiện truy cập bất thường!',
+                    title: 'SECURITY INCIDENT ALERT',
+                    message: data.message || 'Anomalous facility access detected.',
                     type: 'error',
-                    created_at: new Date().toISOString()
+                    created_at: new Date().toISOString(),
+                    read: false
                 };
-                setNotifications(prev => [alertNotif, ...prev]);
-                setUnreadCount(prev => prev + 1);
+                addNotification(alertNotif);
             });
         }
 
@@ -44,34 +48,14 @@ const NotificationDropdown = ({ socket }) => {
                 socket.off('security_incident');
             }
         };
-    }, [socket]);
-
-    const fetchNotifications = async () => {
-        try {
-            const data = await notificationService.getMyNotifications();
-            setNotifications(data);
-            setUnreadCount(data.filter(n => !n.is_read).length);
-        } catch (err) {
-            console.error("Failed to fetch notifications", err);
-        }
-    };
-
-    const markAsRead = async (id) => {
-        try {
-            await notificationService.markAsRead(id);
-            setNotifications(notifications.map(n => n.id === id ? { ...n, is_read: true } : n));
-            setUnreadCount(prev => Math.max(0, prev - 1));
-        } catch (err) {
-            console.error(err);
-        }
-    };
+    }, [socket, fetchNotifications, addNotification]);
 
     const getIcon = (type) => {
         switch (type) {
-            case 'success': return <CheckCircle className="text-emerald-500" size={18} />;
-            case 'error': return <AlertTriangle className="text-rose-500" size={18} />;
-            case 'warning': return <Info className="text-amber-500" size={18} />;
-            default: return <Bell className="text-blue-500" size={18} />;
+            case 'success': return <CheckCircle className="text-green-500" size={16} />;
+            case 'error': return <AlertTriangle className="text-red-500" size={16} />;
+            case 'warning': return <Info className="text-primary" size={16} />;
+            default: return <Bell className="text-primary" size={16} />;
         }
     };
 
@@ -79,11 +63,11 @@ const NotificationDropdown = ({ socket }) => {
         <div className="relative">
             <button 
                 onClick={() => setIsOpen(!isOpen)}
-                className="relative p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-all focus:outline-none"
+                className="relative p-2 text-graphite hover:bg-cloud rounded-md transition-all focus:outline-none border border-transparent hover:border-fog group"
             >
-                <Bell size={22} />
+                <Bell size={20} className="group-hover:text-primary transition-colors" />
                 {unreadCount > 0 && (
-                    <span className="absolute top-1 right-1 w-5 h-5 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white animate-bounce">
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-on-ink text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-canvas shadow-sm">
                         {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                 )}
@@ -92,63 +76,69 @@ const NotificationDropdown = ({ socket }) => {
             {isOpen && (
                 <>
                     <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)}></div>
-                    <div className="absolute right-0 mt-3 w-80 md:w-96 bg-white rounded-none shadow-2xl border border-slate-100 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                        <div className="p-5 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
-                            <h3 className="font-black text-slate-800 tracking-tight flex items-center">
-                                <Terminal size={18} className="mr-2 text-indigo-600" /> TRUNG TÂM PHẢN HỒI
+                    <div className="absolute right-0 mt-md w-80 md:w-[400px] bg-paper rounded-xl shadow-floating border border-fog z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                        <div className="px-xl py-md border-b border-fog flex justify-between items-center bg-cloud">
+                            <h3 className="text-caption-bold text-ink uppercase tracking-widest flex items-center gap-sm">
+                                <Activity size={16} className="text-primary" /> Command Response Hub
                             </h3>
                             {unreadCount > 0 && (
-                                <span className="text-[10px] font-black uppercase text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
-                                    {unreadCount} Mới
+                                <span className="text-[10px] font-bold uppercase text-primary bg-primary/5 px-sm py-xxs rounded border border-primary/10">
+                                    {unreadCount} New Signals
                                 </span>
                             )}
                         </div>
 
-                        <div className="max-h-[450px] overflow-y-auto">
+                        <div className="max-h-[450px] overflow-y-auto divide-y divide-fog">
                             {notifications.length > 0 ? (
                                 notifications.map((notif) => (
                                     <div 
                                         key={notif.id} 
-                                        className={`p-4 border-b border-slate-50 hover:bg-slate-50 transition-colors relative group ${!notif.is_read ? 'bg-indigo-50/30' : ''}`}
-                                        onClick={() => !notif.is_read && markAsRead(notif.id)}
+                                        className={`p-xl hover:bg-cloud/50 transition-colors relative group cursor-pointer ${!notif.read ? 'bg-primary/5' : ''}`}
+                                        onClick={() => !notif.read && markAsRead(notif.id)}
                                     >
-                                        <div className="flex gap-4">
-                                            <div className="mt-1 flex-shrink-0">
+                                        <div className="flex gap-xl">
+                                            <div className="mt-xs flex-shrink-0">
                                                 {getIcon(notif.type)}
                                             </div>
                                             <div className="flex-1">
-                                                <p className={`text-sm font-bold ${!notif.is_read ? 'text-slate-900' : 'text-slate-600'}`}>
+                                                <p className={`text-caption-bold uppercase tracking-wide ${!notif.read ? 'text-ink' : 'text-graphite'}`}>
                                                     {notif.title}
                                                 </p>
-                                                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                                                <p className="text-caption-md text-charcoal mt-xxs leading-relaxed">
                                                     {notif.message}
                                                 </p>
-                                                <p className="text-[10px] text-slate-400 mt-2 font-medium flex items-center">
-                                                    <Clock size={10} className="mr-1" />
-                                                    {new Date(notif.created_at).toLocaleString('vi-VN')}
-                                                </p>
+                                                <div className="text-[10px] text-graphite mt-md font-bold flex items-center gap-xs uppercase tracking-widest">
+                                                    <Clock size={10} />
+                                                    {new Date(notif.created_at).toLocaleString('en-GB', { hour12: false })}
+                                                </div>
                                             </div>
-                                            {!notif.is_read && (
-                                                <div className="w-2 h-2 bg-indigo-500 rounded-full mt-2"></div>
+                                            {!notif.read && (
+                                                <div className="w-1.5 h-1.5 bg-primary rounded-full mt-xs"></div>
                                             )}
                                         </div>
                                     </div>
                                 ))
                             ) : (
-                                <div className="py-12 text-center">
-                                    <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <Bell className="text-slate-300" size={32} />
+                                <div className="py-xxl text-center px-xl">
+                                    <div className="w-16 h-16 bg-cloud rounded-full flex items-center justify-center mx-auto mb-xl border border-fog shadow-inner">
+                                        <ShieldAlert className="text-fog" size={32} />
                                     </div>
-                                    <p className="text-slate-400 font-bold tracking-tight">Bầu trời hôm nay thật yên bình</p>
-                                    <p className="text-xs text-slate-300 mt-1">Chưa có thông báo nào được gửi tới bạn.</p>
+                                    <p className="text-caption-bold text-graphite uppercase tracking-widest">System parameters nominal</p>
+                                    <p className="text-caption-md text-steel mt-xs max-w-[200px] mx-auto">No pending administrative signals or security alerts at this time.</p>
                                 </div>
                             )}
                         </div>
 
                         {notifications.length > 0 && (
-                            <div className="p-3 bg-slate-50 text-center border-t border-slate-100">
-                                <button className="text-xs font-bold text-slate-500 hover:text-indigo-600 transition tracking-widest uppercase">
-                                    Xem tất cả báo cáo
+                            <div className="p-md bg-cloud border-t border-fog flex justify-between items-center px-xl">
+                                <button 
+                                    onClick={markAllAsRead}
+                                    className="text-[10px] font-bold text-graphite hover:text-primary transition uppercase tracking-widest flex items-center gap-xs"
+                                >
+                                    <CheckCheck size={14} /> Clear Active Alerts
+                                </button>
+                                <button className="text-[10px] font-bold text-graphite hover:text-primary transition uppercase tracking-widest">
+                                    Full Ledger
                                 </button>
                             </div>
                         )}

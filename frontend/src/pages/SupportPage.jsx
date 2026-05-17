@@ -1,31 +1,33 @@
 import React, { useState } from 'react';
-import { HelpCircle, Phone, Mail, MessageSquare, AlertCircle, Server, CheckCircle } from 'lucide-react';
+import { HelpCircle, Phone, Mail, MessageSquare, AlertCircle, Server, CheckCircle, ChevronRight, Send, Activity } from 'lucide-react';
+import { useLanguageStore } from '../store/languageStore';
 
 const SupportPage = () => {
+    const { t } = useLanguageStore();
     const [ticketSent, setTicketSent] = useState(false);
     const [ticketData, setTicketData] = useState({ title: '', desc: '' });
 
     const contacts = [
         {
-            role: "Hỗ trợ Kỹ thuật (IT Support)",
-            name: "Trần Diễm Quỳnh",
-            phone: "0901.234.567",
+            role: t('support.technical_support_it'),
+            name: "Tran Diem Quynh",
+            phone: "+84 901 234 567",
             email: "support.rd@company.com",
-            available: "24/7"
+            available: t('support.response_247')
         },
         {
-            role: "Quản lý Phòng R&D (Admin)",
-            name: "Đoàn Phương Ninh",
-            phone: "0902.345.678",
+            role: t('support.facility_management'),
+            name: "Doan Phuong Ninh",
+            phone: "+84 902 345 678",
             email: "admin.rd@company.com",
-            available: "Giờ hành chính"
+            available: t('support.business_hours')
         },
         {
-            role: "An ninh Khu vực (Security)",
-            name: "Đội An Ninh",
-            phone: "Nội bộ: 113",
+            role: t('support.site_security'),
+            name: "Rapid Response Team",
+            phone: "Internal: 113",
             email: "security@company.com",
-            available: "24/7"
+            available: t('support.emergency_only')
         }
     ];
 
@@ -38,106 +40,122 @@ const SupportPage = () => {
     };
 
     return (
-        <div className="px-6 md:px-12 py-8 w-full relative z-10 animate-in fade-in duration-700">
-            <div className="mb-10 text-center md:text-left">
-                <h1 className="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight flex items-center justify-center md:justify-start">
-                    <HelpCircle className="text-[#0F5FDC] dark:text-blue-400 mr-3" size={36} /> Hỗ Trợ Kỹ Thuật
-                </h1>
-                <p className="text-slate-500 dark:text-slate-400 mt-2 text-base">Liên hệ với chúng tôi khi gặp sự cố về hệ thống hoặc thiết bị.</p>
+        <div className="min-h-screen bg-canvas text-ink font-sans p-xl">
+            {/* Header Section */}
+            <div className="mb-xxl">
+                <h1 className="text-display-md tracking-tight mb-xs">{t('support.technical_support_portal')}</h1>
+                <p className="text-body-md text-charcoal">{t('support.support_portal_desc')}</p>
             </div>
 
-            {/* System Status Widget */}
-            <div className="mb-10 bg-white/80 dark:bg-slate-900/50 backdrop-blur-xl p-6 rounded-2xl shadow-xl border border-slate-200/60 dark:border-slate-800/50 flex flex-wrap items-center justify-between gap-4">
-                <div className="flex items-center">
-                    <div className="p-3 bg-blue-500/10 text-[#0F5FDC] dark:text-blue-400 rounded-xl mr-4 flex-shrink-0">
-                        <Server size={24} />
+            {/* System Status Dashboard */}
+            <div className="mb-xl bg-paper border border-fog p-xl rounded-xl shadow-floating flex flex-wrap items-center justify-between gap-xl">
+                <div className="flex items-center gap-xl">
+                    <div className="p-sm bg-primary/5 text-primary rounded-md border border-primary/10">
+                        <Activity size={24} />
                     </div>
                     <div>
-                        <h3 className="text-lg font-bold text-slate-800 dark:text-white">Trạng thái hệ thống</h3>
-                        <p className="text-base text-slate-500 dark:text-slate-400">Tất cả các dịch vụ đang hoạt động bình thường.</p>
+                        <h3 className="text-body-emphasis text-ink uppercase tracking-widest">{t('support.system_health_matrix')}</h3>
+                        <p className="text-caption-md text-charcoal">{t('support.system_health_desc')}</p>
                     </div>
                 </div>
-                <div className="flex items-center space-x-6">
-                    <div className="flex items-center">
-                        <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse mr-2" />
-                        <span className="text-sm font-bold text-emerald-500 uppercase tracking-wider">Server: Online</span>
+                <div className="flex items-center gap-xl">
+                    <div className="flex items-center gap-xs">
+                        <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                        <span className="text-[10px] font-bold text-green-700 uppercase tracking-widest">{t('support.core_node_operational')}</span>
                     </div>
-                    <div className="flex items-center">
-                        <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse mr-2" />
-                        <span className="text-sm font-bold text-emerald-500 uppercase tracking-wider">Database: Connected</span>
+                    <div className="flex items-center gap-xs">
+                        <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                        <span className="text-[10px] font-bold text-green-700 uppercase tracking-widest">{t('support.db_cluster_sync')}</span>
                     </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-xl mb-xxl">
                 {contacts.map((contact, idx) => (
-                    <div key={idx} className="bg-white/80 dark:bg-slate-900/50 backdrop-blur-xl p-6 rounded-2xl shadow-xl border border-slate-200/60 dark:border-slate-800/50 transition-all duration-300 hover:border-blue-500/30">
-                        <p className="text-sm font-bold text-[#0F5FDC] dark:text-blue-400 uppercase tracking-widest mb-1">{contact.role}</p>
-                        <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4">{contact.name}</h2>
+                    <div key={idx} className="bg-paper border border-fog p-xl rounded-xl shadow-soft-lift transition-all duration-300 hover:border-primary group">
+                        <p className="text-[10px] font-bold text-primary uppercase tracking-widest mb-xxs">{contact.role}</p>
+                        <h2 className="text-body-emphasis text-ink mb-xl">{contact.name}</h2>
 
-                        <div className="space-y-3 mt-4 text-base text-slate-600 dark:text-slate-300">
-                            <div className="flex items-center">
-                                <Phone size={16} className="mr-3 text-slate-400" />
+                        <div className="space-y-md text-caption-md text-charcoal">
+                            <div className="flex items-center gap-md">
+                                <div className="p-xs bg-cloud rounded text-graphite group-hover:text-primary transition-colors">
+                                    <Phone size={14} />
+                                </div>
                                 <span>{contact.phone}</span>
                             </div>
-                            <div className="flex items-center">
-                                <Mail size={16} className="mr-3 text-slate-400" />
-                                <span>{contact.email}</span>
+                            <div className="flex items-center gap-md">
+                                <div className="p-xs bg-cloud rounded text-graphite group-hover:text-primary transition-colors">
+                                    <Mail size={14} />
+                                </div>
+                                <span className="truncate">{contact.email}</span>
                             </div>
-                            <div className="flex items-center">
-                                <MessageSquare size={16} className="mr-3 text-slate-400" />
-                                <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded text-xs font-bold">{contact.available}</span>
+                            <div className="flex items-center gap-md">
+                                <div className="p-xs bg-cloud rounded text-graphite group-hover:text-primary transition-colors">
+                                    <MessageSquare size={14} />
+                                </div>
+                                <span className="px-xs py-xxs bg-cloud border border-fog rounded text-[10px] font-bold uppercase tracking-widest">{contact.available}</span>
                             </div>
                         </div>
                     </div>
                 ))}
             </div>
 
-            <div className="bg-white/80 dark:bg-slate-900/50 backdrop-blur-xl p-8 rounded-2xl shadow-xl border border-slate-200/60 dark:border-slate-800/50">
-                <div className="flex items-center mb-6">
-                    <div className="p-3 bg-blue-500/10 text-[#0F5FDC] dark:text-blue-400 rounded-xl mr-4 flex-shrink-0">
+            {/* Support Ticket Section */}
+            <div className="bg-paper border border-fog p-xxl rounded-xl shadow-floating relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
+                
+                <div className="flex items-center gap-xl mb-xxl relative z-10">
+                    <div className="p-sm bg-primary text-on-ink rounded-md shadow-soft-lift">
                         <AlertCircle size={24} />
                     </div>
                     <div>
-                        <h3 className="text-xl font-bold text-slate-800 dark:text-white">Bạn gặp lỗi phần mềm?</h3>
-                        <p className="text-base text-slate-500 dark:text-slate-400">Gửi Ticket yêu cầu hỗ trợ trực tiếp đến đội ngũ IT.</p>
+                        <h3 className="text-display-xs text-ink">{t('support.service_request_terminal')}</h3>
+                        <p className="text-caption-md text-charcoal">{t('support.service_request_desc')}</p>
                     </div>
                 </div>
 
                 {ticketSent ? (
-                    <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 p-4 rounded-xl flex items-center justify-center font-bold text-base">
-                        <CheckCircle size={20} className="mr-2 animate-bounce" /> Gửi Ticket thành công! Chúng tôi sẽ liên hệ lại sớm nhất.
+                    <div className="p-xl bg-green-50 border border-green-100 rounded-md text-green-700 flex flex-col items-center justify-center gap-md animate-in zoom-in-95">
+                        <div className="p-md bg-white rounded-full shadow-sm">
+                            <CheckCircle size={32} className="text-green-500 animate-bounce" />
+                        </div>
+                        <p className="text-caption-bold uppercase tracking-widest">{t('support.ticket_transmitted')}</p>
+                        <p className="text-caption-md text-green-600/80 italic">{t('support.ticket_transmitted_desc')}</p>
                     </div>
                 ) : (
-                    <form onSubmit={handleSendTicket} className="space-y-4">
-                        <div>
-                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Tiêu đề sự cố</label>
-                            <input
-                                type="text"
-                                value={ticketData.title}
-                                onChange={(e) => setTicketData({ ...ticketData, title: e.target.value })}
-                                placeholder="Ví dụ: Không thể quét mã QR thiết bị..."
-                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/50 rounded-xl text-slate-800 dark:text-white focus:ring-2 focus:ring-[#0F5FDC] outline-none transition font-medium"
-                                required
-                            />
+                    <form onSubmit={handleSendTicket} className="space-y-xl relative z-10">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-xl">
+                            <div className="space-y-xs">
+                                <label className="text-[10px] font-bold text-ink uppercase tracking-widest">{t('support.incident_classification')}</label>
+                                <input
+                                    type="text"
+                                    value={ticketData.title}
+                                    onChange={(e) => setTicketData({ ...ticketData, title: e.target.value })}
+                                    placeholder={t('support.incident_placeholder')}
+                                    className="w-full px-md py-sm bg-cloud border border-fog rounded-md text-body-md outline-none focus:border-primary transition-colors font-medium"
+                                    required
+                                />
+                            </div>
+                            <div className="md:col-span-2 space-y-xs">
+                                <label className="text-[10px] font-bold text-ink uppercase tracking-widest">{t('support.anomaly_description')}</label>
+                                <textarea
+                                    rows="4"
+                                    value={ticketData.desc}
+                                    onChange={(e) => setTicketData({ ...ticketData, desc: e.target.value })}
+                                    placeholder={t('support.anomaly_placeholder')}
+                                    className="w-full px-md py-sm bg-cloud border border-fog rounded-md text-body-md outline-none focus:border-primary transition-colors font-medium resize-none"
+                                    required
+                                />
+                            </div>
                         </div>
-                        <div>
-                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Mô tả chi tiết</label>
-                            <textarea
-                                rows="4"
-                                value={ticketData.desc}
-                                onChange={(e) => setTicketData({ ...ticketData, desc: e.target.value })}
-                                placeholder="Mô tả các bước xảy ra lỗi, thiết bị đang dùng..."
-                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/50 rounded-xl text-slate-800 dark:text-white focus:ring-2 focus:ring-[#0F5FDC] outline-none transition font-medium resize-none"
-                                required
-                            />
+                        <div className="flex justify-end">
+                            <button
+                                type="submit"
+                                className="bg-primary hover:bg-primary-deep text-on-ink px-xl py-sm rounded-md font-bold text-caption-bold uppercase tracking-widest transition shadow-soft-lift flex items-center gap-md active:scale-[0.98]"
+                            >
+                                {t('support.transmit_ticket')} <Send size={16} />
+                            </button>
                         </div>
-                        <button
-                            type="submit"
-                            className="bg-[#0F5FDC] hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-bold transition shadow-lg shadow-blue-500/20 active:scale-[0.98]"
-                        >
-                            Gửi Ticket Hỗ Trợ
-                        </button>
                     </form>
                 )}
             </div>

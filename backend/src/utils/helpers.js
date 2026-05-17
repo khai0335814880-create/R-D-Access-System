@@ -22,12 +22,18 @@ const verifyQRData = (qrData) => {
 
 // Generate JWT token
 const generateJWT = (userId, username, role) => {
-  return jwt.sign({ userId, username, role }, process.env.JWT_SECRET || 'secret', {
+  return jwt.sign({ id: userId, username, role }, process.env.JWT_SECRET || 'secret', {
     expiresIn: process.env.JWT_EXPIRE || '7d',
   });
 };
 
-// Log activity to database
+/**
+ * Log user activity to database
+ * @param {number} userId - ID of the user performing the action
+ * @param {string} type - Activity type (e.g. 'login', 'check_in')
+ * @param {string} description - Human readable description
+ * @param {object} metadata - Optional extra data
+ */
 const logActivity = async (userId, type, description, metadata = {}) => {
   try {
     return await ActivityLog.create({
@@ -47,3 +53,4 @@ module.exports = {
   generateJWT,
   logActivity,
 };
+
