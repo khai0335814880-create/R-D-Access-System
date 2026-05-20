@@ -866,5 +866,39 @@
     "no_activity": "Không có hoạt động truy cập nào gần đây.",
     "unidentified": "Chưa xác định",
     "initializing": "Đang tải dữ liệu..."
+  },
+  "loginPage": {
+    "nav": {
+      "overview": "Tổng quan",
+      "research_domain": "Lĩnh vực nghiên cứu",
+      "innovation_labs": "Phòng Lab Đổi mới",
+      "projects": "Dự án"
+    },
+    "banner": "Quan hệ Đối tác R&D Chiến lược",
+    "title_highlight": "Innovation Nexus",
+    "description": "Sự hợp tác chiến lược giữa HCLTech và ANZ nhằm cùng kiến tạo tương lai của ngân hàng số thông qua nghiên cứu, đổi mới và công nghệ.",
+    "features": {
+      "joint_rd": "R&D CHUNG",
+      "initiatives": "SÁNG KIẾN",
+      "future_ready": "SẴN SÀNG CHO TƯƠNG LAI",
+      "solutions": "GIẢI PHÁP",
+      "secure": "BẢO MẬT",
+      "infrastructure": "HẠ TẦNG",
+      "scalable": "MỞ RỘNG",
+      "impact": "TÁC ĐỘNG"
+    },
+    "welcome": "Chào mừng đến với",
+    "welcome_highlight": "Innovation Nexus",
+    "subtitle": "Đăng nhập để truy cập nền tảng hợp tác chiến lược",
+    "email_username": "EMAIL / TÊN ĐĂNG NHẬP",
+    "email_placeholder": "Nhập tên đăng nhập của bạn",
+    "password": "MẬT KHẨU",
+    "password_placeholder": "••••••••",
+    "remember_me": "Ghi nhớ đăng nhập",
+    "forgot_password": "Quên mật khẩu?",
+    "sign_in": "Đăng nhập",
+    "signing_in": "Đang đăng nhập...",
+    "secure_access": "Truy cập an toàn chỉ dành cho người dùng được ủy quyền",
+    "authorized_only": "Chỉ dành cho người được ủy quyền"
   }
 }

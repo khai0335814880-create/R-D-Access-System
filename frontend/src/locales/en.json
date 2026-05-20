@@ -865,5 +865,39 @@
     "no_activity": "No recent activity detected in terminal memory.",
     "unidentified": "Unidentified",
     "initializing": "Initializing Administrative Terminal..."
+  },
+  "loginPage": {
+    "nav": {
+      "overview": "Overview",
+      "research_domain": "Research Domain",
+      "innovation_labs": "Innovation Labs",
+      "projects": "Projects"
+    },
+    "banner": "Strategic R&D Partnership",
+    "title_highlight": "Innovation Nexus",
+    "description": "A strategic collaboration between HCLTech and ANZ to co-create the future of digital banking through research, innovation and technology.",
+    "features": {
+      "joint_rd": "JOINT R&D",
+      "initiatives": "INITIATIVES",
+      "future_ready": "FUTURE-READY",
+      "solutions": "SOLUTIONS",
+      "secure": "SECURE",
+      "infrastructure": "INFRASTRUCTURE",
+      "scalable": "SCALABLE",
+      "impact": "IMPACT"
+    },
+    "welcome": "Welcome to",
+    "welcome_highlight": "Innovation Nexus",
+    "subtitle": "Sign in to access the strategic collaboration platform",
+    "email_username": "EMAIL / USERNAME",
+    "email_placeholder": "Enter your username",
+    "password": "PASSWORD",
+    "password_placeholder": "••••••••",
+    "remember_me": "Remember me",
+    "forgot_password": "Forgot password?",
+    "sign_in": "Sign In",
+    "signing_in": "Signing In...",
+    "secure_access": "Secure access for authorized users only",
+    "authorized_only": "Authorized access only"
   }
 }
