@@ -30,6 +30,7 @@ export const DashboardPage = () => {
   const [totalUsers, setTotalUsers] = useState(0);
   const [totalDevices, setTotalDevices] = useState(0);
   const [quickRequests, setQuickRequests] = useState([]);
+  const [rejectingSerials, setRejectingSerials] = useState({});
 
   const handleLiveScan = (data) => {
     let formattedDevice = data.device;
@@ -69,9 +70,10 @@ export const DashboardPage = () => {
     }
   };
 
-  const handleRejectQuickReg = async (reqData) => {
+  const handleRejectQuickReg = async (reqData, reason) => {
     socket?.emit('quick_register_reject', {
-      serial_number: reqData.serial_number
+      serial_number: reqData.serial_number,
+      reason: reason || 'Không có lý do cụ thể'
     });
     setQuickRequests(prev => prev.filter(r => r.serial_number !== reqData.serial_number));
   };
@@ -507,29 +509,72 @@ export const DashboardPage = () => {
                   </div>
 
                   <div className="flex-1 space-y-xs min-w-0">
-                    <p className="text-caption-bold text-graphite uppercase tracking-widest">Personnel</p>
+                    <p className="text-caption-bold text-graphite uppercase tracking-widest">{t('sidebar.personnel')}</p>
                     <p className="text-body-emphasis truncate">{req.full_name}</p>
                     
-                    <p className="text-caption-bold text-graphite uppercase tracking-widest mt-md">Hardware</p>
+                    <p className="text-caption-bold text-graphite uppercase tracking-widest mt-md">{t('devices')}</p>
                     <p className="text-body-md text-primary font-bold truncate">{req.brand} {req.model_name}</p>
                     <p className="text-[10px] text-graphite font-mono truncate">SN: {req.serial_number}</p>
                   </div>
                 </div>
 
-                <div className="p-md bg-cloud border-t border-fog flex gap-md">
-                  <button
-                    onClick={() => handleRejectQuickReg(req)}
-                    className="flex-1 py-sm button-label-md text-bloom-deep border border-bloom-coral/30 rounded-md hover:bg-bloom-rose/20 transition"
-                  >
-                    Reject
-                  </button>
-                  <button
-                    onClick={() => handleApproveQuickReg(req)}
-                    className="flex-2 py-sm button-label-md bg-primary text-on-ink rounded-md shadow-soft-lift hover:bg-primary-deep transition"
-                  >
-                    Authorize Entry
-                  </button>
-                </div>
+                {rejectingSerials[req.serial_number] !== undefined ? (
+                  <div className="p-xl bg-canvas border-t border-fog space-y-md">
+                    <p className="text-caption-bold text-bloom-deep uppercase tracking-widest">
+                      {t('devices.reject_reason') || 'Lý do từ chối'}
+                    </p>
+                    <textarea
+                      value={rejectingSerials[req.serial_number]}
+                      onChange={(e) => setRejectingSerials(prev => ({ ...prev, [req.serial_number]: e.target.value }))}
+                      placeholder={t('placeholders.type_here') || 'Nhập lý do tại đây...'}
+                      className="w-full p-sm text-body-md border border-bloom-coral/30 rounded-md bg-paper focus:outline-none focus:ring-2 focus:ring-bloom-coral/20 resize-none h-20"
+                      autoFocus
+                    />
+                    <div className="flex gap-md">
+                      <button
+                        onClick={() => {
+                          setRejectingSerials(prev => {
+                            const copy = { ...prev };
+                            delete copy[req.serial_number];
+                            return copy;
+                          });
+                        }}
+                        className="flex-1 py-sm button-label-md text-graphite border border-fog rounded-md hover:bg-cloud transition"
+                      >
+                        {t('modal.cancel') || 'Hủy'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          const reason = rejectingSerials[req.serial_number];
+                          handleRejectQuickReg(req, reason);
+                          setRejectingSerials(prev => {
+                            const copy = { ...prev };
+                            delete copy[req.serial_number];
+                            return copy;
+                          });
+                        }}
+                        className="flex-1 py-sm button-label-md bg-bloom-coral text-white rounded-md shadow-soft-lift hover:bg-bloom-wine transition"
+                      >
+                        {t('common.confirm') || 'Xác nhận'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-md bg-cloud border-t border-fog flex gap-md">
+                    <button
+                      onClick={() => setRejectingSerials(prev => ({ ...prev, [req.serial_number]: '' }))}
+                      className="flex-1 py-sm button-label-md text-bloom-deep border border-bloom-coral/30 rounded-md hover:bg-bloom-rose/20 transition"
+                    >
+                      {t('dashboard.reject')}
+                    </button>
+                    <button
+                      onClick={() => handleApproveQuickReg(req)}
+                      className="flex-2 py-sm button-label-md bg-primary text-on-ink rounded-md shadow-soft-lift hover:bg-primary-deep transition"
+                    >
+                      {t('dashboard.authorize_entry')}
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>

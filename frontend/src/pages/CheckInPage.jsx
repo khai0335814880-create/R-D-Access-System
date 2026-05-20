@@ -67,7 +67,12 @@ export const CheckInPage = () => {
       socket.on('quick_register_reject_update', (payload) => {
         if (payload.serial_number === quickRegDataRef.current.serial_number) {
           setQuickRegStatus('rejected');
-          setMessage(t('kiosk.registration_declined'));
+          let baseMsg = t('kiosk.registration_declined');
+          if (baseMsg.endsWith('.')) {
+            baseMsg = baseMsg.slice(0, -1);
+          }
+          const reasonText = payload.reason ? `: ${payload.reason}` : '';
+          setMessage(`${baseMsg}${reasonText}`);
           setMessageType('error');
         }
       });
